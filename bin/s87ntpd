@@ -1,31 +1,39 @@
 #!/usr/bin/env python
 
 import os, time, sys
+import lib.log
+
+debug = False
+if os.path.isfile('/opt/s87/DEBUG'):
+        debug = True
+        logging = lib.log.LogFile('s87ntpd', '/tmp/s87ntpd.log')
 
 
 
 def syncTime(server):
-	out = os.popen('ntpdate -u ' + server).read()
-	if 'no server suitable' in out:
-		return False
-	return True
+    out = os.popen('ntpdate -u ' + server).read()
+    if 'no server suitable' in out:
+        if debug: logging.warning(server + ' not available!')
+        return False
+    if debug: logging.info('timesync successfully. '+ out)
+    return True
 
 
 def setHWClock():
-	os.popen('hwclock --systohc')
-	return True
+    os.popen('hwclock --systohc')
+    return True
 
 
 
 try:
-	while True:
-		r = syncTime('de.pool.ntp.org')
-		if r == True:
-			setHWClock()
-			time.sleep(3600)
-		else:
-			time.sleep(60)
+    while True:
+        r = syncTime('de.pool.ntp.org')
+        if r == True:
+            setHWClock()
+            time.sleep(3600)
+        else:
+            time.sleep(60)
 except KeyboardInterrupt:
-	print 'exit.'
+    print 'exit.'
 
 
