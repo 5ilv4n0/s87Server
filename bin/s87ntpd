@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import os, time, sys
+sys.path.append('/opt/s87/bin')
+
 import lib.log
 
 debug = False
