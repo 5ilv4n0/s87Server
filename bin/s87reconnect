@@ -1,2 +1,71 @@
-#!/bin/bash
-poff && sleep 2 && pon dsl-provider && sleep 2
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  s87reconnect
+#  
+#  Copyright 2012 Silvano Wegener <silvano@DV8000>
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#  
+#  
+import os, time, sys, re
+sys.path.append('/opt/s87/bin/lib')
+import log
+processName = sys.argv[0]
+debug = False
+if os.path.isfile('/opt/s87/DEBUG'):
+        debug = True
+        logging = log.LogFile(processName, '/tmp/' + processName + '.log')
+
+
+
+def reconnect():
+    if debug: logging.info('disconnecting...')
+    disconnect()
+    time.sleep(2)
+    if debug: logging.info('connecting...')
+    connect()
+    if debug: logging.info('new ip is: ' + getExternIP())
+
+def disconnect():
+    os.system('poff')
+    
+def connect():
+    os.system('pon dsl-provider')
+
+
+def getExternIP():
+    iprDefault = os.popen('ip r').read()
+    for line in iprDefault.split(os.linesep):
+        r = re.match(r'default.+dev (.+) .+',line)
+        if not r == None:
+            iface = r.groups()[0].split()[0]
+            break
+    out = os.popen('ifconfig ' + iface).readlines()
+    for line in out:
+        if 'inet Adresse:' in line:
+        
+            r = re.match(r'.*inet Adresse:(\d+\.\d+\.\d+\.\d+).+', line)
+            if not r == None:
+                return r.groups()[0]
+            else:
+                return '127.0.0.1'
+    
+
+reconnect()
+
+
+
