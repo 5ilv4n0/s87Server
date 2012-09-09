@@ -1,1 +1,3 @@
 *.passwd
+*.pyc
+DEBUG
