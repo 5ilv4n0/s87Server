@@ -63,6 +63,7 @@ class LogFile(object):
         line = self.nowDateTimeStamp() + ' [' + self.processName + '] -> ' + str(tag+':').ljust(12, ' ') + message
         print line
         self.buffer.write(line + os.linesep)
+        self.buffer.flush()
         
         
     def nowDateTimeStamp(self):

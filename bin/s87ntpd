@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import os, time, sys
-sys.path.append('/opt/s87/bin')
+sys.path.append('/opt/s87/bin/lib')
 
-import lib.log
+import log
 
 debug = False
 if os.path.isfile('/opt/s87/DEBUG'):
         debug = True
-        logging = lib.log.LogFile('s87ntpd', '/tmp/s87ntpd.log')
+        logging = log.LogFile('s87ntpd', '/tmp/s87ntpd.log')
 
 
 
@@ -17,7 +17,7 @@ def syncTime(server):
     if 'no server suitable' in out:
         if debug: logging.warning(server + ' not available!')
         return False
-    if debug: logging.info('timesync successfully. '+ out)
+    if debug: logging.info('timesync successfully. '+ out.replace(os.linesep, ''))
     return True
 
 
@@ -26,14 +26,17 @@ def setHWClock():
     return True
 
 
-
+if debug: logging.info('starting...')
 try:
     while True:
         r = syncTime('de.pool.ntp.org')
         if r == True:
+            if debug: logging.info('set hwclock.')
             setHWClock()
+            if debug: logging.info('wait 3600s...')
             time.sleep(3600)
         else:
+            if debug: logging.info('wait 60s...')
             time.sleep(60)
 except KeyboardInterrupt:
     print 'exit.'
