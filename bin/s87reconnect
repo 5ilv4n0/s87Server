@@ -24,7 +24,7 @@
 import os, time, sys, re
 sys.path.append('/opt/s87/bin/lib')
 import log
-processName = sys.argv[0]
+processName = os.path.split(sys.argv[0])[1]
 debug = False
 if os.path.isfile('/opt/s87/DEBUG'):
         debug = True
