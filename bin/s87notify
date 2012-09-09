@@ -1,0 +1,143 @@
+#!/usr/bin/env python
+import os, sys, json, time, re
+
+def getCPUCurrentCriticalTemp():
+	cpuTemp = os.popen('sensors').read()
+	temp = cpuTemp.split(os.linesep)[2]
+	current, critical = re.match(r'temp1:.+\+(\d+\.\d).+\(crit.+\+(\d+\.\d).+',temp).groups()
+	current = float(current)
+	critical = float(critical)
+	return current, critical
+
+
+def getHDDInfo():
+	content = os.popen('df -h | grep /dev/').read()
+	outLines = []
+	for entry in content.split(os.linesep):
+		if not entry == '':
+			lEntry = entry.split()
+			if lEntry[5] in smtpConfig['mountPoints']:
+				outLines.append(str(lEntry[5].ljust(40,' ') + ' ' + lEntry[4].rjust(4,' ') + ' ' + '[' + lEntry[3] + '/' + lEntry[1] + ']'))
+	return outLines
+
+
+
+
+
+
+
+def readConfig(jsonFilePath):
+	with open(jsonFilePath,'r') as f:
+		config = json.load(f)
+		return config
+
+
+def nowDateTimeStamp():
+	dateTimeStamp = time.strftime("[%d.%m.%Y - %H:%M:%S]", time.localtime())
+	return dateTimeStamp
+
+
+def sendMail(smtpConfig, subject, message, **keyWordArgs):
+	try:
+		a = keyWordArgs['attach']
+		attachPart = ' -a ' + a
+	except KeyError:
+		attachPart = ''
+	out = os.popen('sendEmail -f "' + smtpConfig['sender'] + '" -s ' + smtpConfig['server'] + ':' + str(smtpConfig['port']) + ' -xu "' + smtpConfig['user'] + '" -xp "' + smtpConfig['password'] + '" -t "' + smtpConfig['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
+
+	if 'ERROR' in out: 
+		return False
+	return True
+
+
+
+
+
+
+
+
+hostName = os.popen('cat /etc/hostname').read()
+smtpConfig = readConfig('/opt/s87/config/s87notify.conf')
+
+
+
+
+
+
+
+
+try:
+	if sys.argv[1] == '--dailyHDD':
+		outLines = getHDDInfo()
+		content = 'Current HDD values:\n\n'
+		content +=  os.linesep.join(outLines)
+		sendMail(smtpConfig, hostName + ': Daily HDD info.', content.replace(' ','.')) 
+		sys.exit()
+except IndexError:
+	pass
+
+
+
+
+tempWarningSended = 0
+tempAlertSended = 0
+
+hddInfo = getHDDInfo()
+counterHDD = {}
+for hdd in hddInfo:
+	counterHDD[hdd] = 0
+
+
+try:
+	while True:
+
+
+		currentCPUTemp, criticalCPUTemp = getCPUCurrentCriticalTemp()
+		if currentCPUTemp > criticalCPUTemp - 10:
+			if tempAlertSended == 0:
+				content = 'CPU Temperature very high! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
+				sendMail(smtpConfig, hostName + ': CPU Temperature ALERT!', content) 
+				tempAlertSended = 1
+		if currentCPUTemp > criticalCPUTemp - 20:
+			if tempWarningSended == 0 and tempAlertSended == 0:
+				content = 'CPU Temperature is rising! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
+				sendMail(smtpConfig, hostName + ': CPU Temperature WARNING!', content) 
+				tempWarningSended = 1
+		if tempAlertSended == 1 or tempWarningSended == 1:
+			if currentCPUTemp < criticalCPUTemp - 30:
+				tempAlertSended = 0
+				tempWarningSended = 0
+				content = 'CPU Temperature OK again! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
+				sendMail(smtpConfig, hostName + ': CPU Temperature is OK now.', content) 
+
+
+
+		hddInfo = getHDDInfo()
+		for hdd in hddInfo:
+			r = re.match(r'.+[ ]+(\d+)%.+', hdd)
+			if not r == None:
+				percentInUse = int(r.groups()[0])
+				if percentInUse > 84:
+					if counterHDD[hdd] == 0:
+						content = str('HDD nearly full! \n\n'+hdd).replace(' ','.')
+						sendMail(smtpConfig, hostName + ': HDD nearly full.', content)
+				else:
+					counterHDD[hdd] = 0
+
+
+	
+
+
+
+
+
+
+	
+		time.sleep(2)
+		for hdd in hddInfo:
+			counterHDD[hdd] += 1
+			if counterHDD[hdd] > 1800:
+				counterHDD[hdd] = 0
+except KeyboardInterrupt:
+	print 'exit'
+	sys.exit()

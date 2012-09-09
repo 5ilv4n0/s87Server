@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+import os, sys, re, time, subprocess
+
+def getRunningProcesses():
+	return os.popen('ps ax').read()
+	processes = []
+	rp = os.popen('ps ax').readlines()
+	for line in rp:
+		r = re.match(r'.+\d:\d\d(.+)',line)
+		if not r == None:
+			processes.append(r.groups()[0])
+	return processes
+
+
+
+s87initCount =  os.popen('ps ax | grep s87init | grep -v grep | wc -l').read()
+if int(s87initCount) > 1:
+	sys.exit()
+
+os.system('shorewall restart')
+
+#SET DISKS IN FSTAB WITH UUID AND /MNT/ IN MOUNTPOINT TO 30SEC STANDBY TIME
+fstab = os.popen('cat /etc/fstab').read().split(os.linesep)
+translateUUID = os.popen('ls -l /dev/disk/by-uuid/').read().split(os.linesep)
+for disc in fstab:
+	if 'UUID' in disc and '/mnt/' in disc:
+		disc = disc.split()
+		for uuid in translateUUID:
+			if disc[0].replace('UUID=','') in uuid:
+				device = '/dev/' + str(uuid.split('/')[-1])[:-1]
+				print 'set',device,'standby time to 30s.'
+				os.popen('hdparm -S 6 '+ device)
+		
+
+
+
+
+
+
+try:
+	while True:
+		psax = getRunningProcesses()
+
+
+		if not 's87ntpd' in psax:
+			os.popen('/opt/s87/bin/s87ntpd &')
+
+		if not 's87pyload' in psax:
+			os.popen('/opt/s87/bin/s87pyload &')
+
+		if not 's87notify' in psax:
+			os.popen('/opt/s87/bin/s87notify &')
+
+
+
+
+		time.sleep(5)
+except KeyboardInterrupt:
+	print 'exit.'
+

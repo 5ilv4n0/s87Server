@@ -1,0 +1,78 @@
+#!/usr/bin/python
+
+
+import sys, os, serial, threading, time
+
+EXITCHARCTER = '\x1d'   # GS/CTRL+]
+MENUCHARACTER = '\x14'  # Menu: CTRL+T
+
+CONVERT_CRLF = 2
+CONVERT_CR   = 1
+CONVERT_LF   = 0
+NEWLINE_CONVERISON_MAP = ('\n', '\r', '\r\n')
+LF_MODES = ('LF', 'CR', 'CR/LF')
+REPR_MODES = ('raw', 'some control', 'all control', 'hex')
+
+
+
+if len(sys.argv) < 2:
+	print "COMMANDS"
+	print '-------------------------------------------------'
+	print 'sum[0|1]\t\t\tmakes a beep'
+	print 'rst\t\t\t\treset all ports'
+	print 'eew\t\t\t\twrites byte to eeprom'
+	print 'eer\t\t\t\treads byte from eeprom'
+	print 'dis\t\t\t\tinitialized lcd display' 
+	print 'lcd\t\t\t\tshow message on display'
+	print 'get[C|B|D].[0-7]\t\tshows state of pin'
+	print 'set[C|B|D].[0-7]=[0|1]\t\tset state of pin'
+	print 'sta[C|B|D]\t\t\tshow state of port'
+	print 'opu[C|B|D].[0-7]\t\tsets pin to output'
+	print 'ipu[C|B|D].[0-7]\t\tsets pin to input'
+	print '------------------------------------------------'
+
+
+import termios, sys, os
+
+
+class Miniterm:
+    def __init__(self, port, baudrate, parity, rtscts, xonxoff, echo=False, convert_outgoing=CONVERT_CRLF, repr_mode=0):
+        try:
+            #self.serial = serial.serial_for_url(port, baudrate, parity=parity, rtscts=rtscts, xonxoff=xonxoff, timeout=1)
+            self.serial = serial.Serial(port, baudrate, parity=parity, rtscts=rtscts, xonxoff=xonxoff, timeout=0.01)
+                     
+        except AttributeError:
+            self.serial = serial.Serial(port, baudrate, parity=parity, rtscts=rtscts, xonxoff=xonxoff, timeout=1)
+        self.echo = echo
+        self.repr_mode = repr_mode
+        self.convert_outgoing = convert_outgoing
+        self.newline = NEWLINE_CONVERISON_MAP[self.convert_outgoing]
+        self.dtr_state = True
+        self.rts_state = True
+        self.break_state = False
+
+
+    def getAvrData(self, data):
+		self.serial.write(data + chr(13))
+		self.serial.flush()
+		data = self.serial.read(64)
+		return data.split('\r\n')[1].replace('\n','')
+
+
+
+try:
+	miniterm = Miniterm(
+		'/dev/ttyS0',
+		9600,
+		'N',
+		rtscts=0,
+		xonxoff=0,
+		echo=0)	
+except serial.SerialException, e:
+	sys.stderr.write("could not open port %r: %s\n" % (port, e))
+	sys.exit(1)
+
+
+
+print miniterm.getAvrData(sys.argv[1])		
+if 'sum' in sys.argv[1]: time.sleep(0.5)

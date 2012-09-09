@@ -1,0 +1,2 @@
+#!/bin/bash
+poff && sleep 2 && pon dsl-provider && sleep 2

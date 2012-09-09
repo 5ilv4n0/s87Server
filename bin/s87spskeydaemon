@@ -1,0 +1,23 @@
+#!/usr/bin/python
+
+import os
+
+
+
+while True:
+	B = os.popen('s87sps staB').read().replace('B=','').replace(os.linesep,'')
+	C = os.popen('s87sps staC').read().replace('C=','').replace(os.linesep,'')
+	for pin in range(4,8):
+		if B[pin] == '0':
+			if C[pin] == '0':
+				set='1'
+			else:
+				set='0'
+			if pin == 4: pin=3
+			if pin == 5: pin=2
+			if pin == 6: pin=1
+			if pin == 7: pin=0
+			os.system('s87sps setC.' + str(pin) + '=' + set)
+	
+
+

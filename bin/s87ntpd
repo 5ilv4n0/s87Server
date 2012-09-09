@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+import os, time, sys
+
+
+
+def syncTime(server):
+	out = os.popen('ntpdate -u ' + server).read()
+	if 'no server suitable' in out:
+		return False
+	return True
+
+
+def setHWClock():
+	os.popen('hwclock --systohc')
+	return True
+
+
+
+try:
+	while True:
+		r = syncTime('de.pool.ntp.org')
+		if r == True:
+			setHWClock()
+			time.sleep(3600)
+		else:
+			time.sleep(60)
+except KeyboardInterrupt:
+	print 'exit.'
+
+

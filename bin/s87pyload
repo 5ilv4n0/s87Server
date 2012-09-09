@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+
+import os, sys
+
+
+out = os.popen('ps ax | grep pyLoadCore | grep -v grep').read()
+if out == '':
+	os.system('pyLoadCore >> /var/log/pyload.log')
+	sys.exit()
