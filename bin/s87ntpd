@@ -21,7 +21,7 @@
 #  MA 02110-1301, USA.
 #  
 #  
-import os, time, sys
+import os, time, sys, json
 sys.path.append('/opt/s87/bin/lib')
 import log
 processName = os.path.split(sys.argv[0])[1]
@@ -38,7 +38,7 @@ def readConfig(jsonFilePath):
 
 
 def syncTime(server):
-    out = os.popen('ntpdate -u ' + server).read()
+    out = os.popen('ntpdate -u ' + server + ' 2>&1').read()
     if 'no server suitable' in out:
         if debug: logging.warning(server + ' not available!')
         return False
@@ -65,9 +65,8 @@ try:
                 if debug: logging.info('wait 3600s.')
                 time.sleep(3600)
                 break
-            else:
-                if debug: logging.info('wait 10s.')
-                time.sleep(10)
+        if debug: logging.info('wait 10s.')
+        time.sleep(10)
 except KeyboardInterrupt:
     print 'exit.'
 
