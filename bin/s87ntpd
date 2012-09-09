@@ -31,6 +31,11 @@ if os.path.isfile('/opt/s87/DEBUG'):
         logging = log.LogFile(processName, '/tmp/' + processName + '.log')
 
 
+def readConfig(jsonFilePath):
+	with open(jsonFilePath,'r') as f:
+		config = json.load(f)
+		return config
+
 
 def syncTime(server):
     out = os.popen('ntpdate -u ' + server).read()
@@ -46,18 +51,23 @@ def setHWClock():
     return True
 
 
+
+config = readConfig('/opt/s87/config/s87ntpd.conf')
 if debug: logging.info('starting...')
 try:
     while True:
-        r = syncTime('de.pool.ntp.org')
-        if r == True:
-            if debug: logging.info('set hwclock.')
-            setHWClock()
-            if debug: logging.info('wait 3600s...')
-            time.sleep(3600)
-        else:
-            if debug: logging.info('wait 60s...')
-            time.sleep(60)
+        for server in config['ntpServers']:
+            if debug: logging.info('try ntp server ' + server)
+            r = syncTime(server)
+            if r == True:
+                if debug: logging.info('sync hwclock.')
+                setHWClock()
+                if debug: logging.info('wait 3600s.')
+                time.sleep(3600)
+                break
+            else:
+                if debug: logging.info('wait 10s.')
+                time.sleep(10)
 except KeyboardInterrupt:
     print 'exit.'
 
