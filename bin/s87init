@@ -52,6 +52,8 @@ try:
 		if not 's87notify' in psax:
 			os.popen('/opt/s87/bin/s87notify &')
 
+		if not 's87spskeydaemon' in psax:
+			os.popen('/opt/s87/bin/s87spskeydaemon &')
 
 
 
