@@ -20,8 +20,10 @@ while True:
 				if pin == 7: pin=0
 				print pin, set
 				os.system('s87sps setC.' + str(pin) + '=' + set)
-				time.sleep(1)
+				time.sleep(2)
+
+
 	except IndexError:
 		pass
 
-
+	time.sleep(2)
