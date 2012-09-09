@@ -27,14 +27,14 @@ import log
 processName = os.path.split(sys.argv[0])[1]
 debug = False
 if os.path.isfile('/opt/s87/DEBUG'):
-        debug = True
-        logging = log.LogFile(processName, '/tmp/' + processName + '.log')
+    debug = True
+    logging = log.LogFile(processName, '/tmp/' + processName + '.log')
 
 
 def readConfig(jsonFilePath):
-	with open(jsonFilePath,'r') as f:
-		config = json.load(f)
-		return config
+    with open(jsonFilePath,'r') as f:
+        config = json.load(f)
+    return config
 
 
 def syncTime(server):
