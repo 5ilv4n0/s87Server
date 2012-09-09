@@ -16,7 +16,7 @@ def getHDDInfo():
 	for entry in content.split(os.linesep):
 		if not entry == '':
 			lEntry = entry.split()
-			if lEntry[5] in smtpConfig['mountPoints']:
+			if lEntry[5] in config['mountPoints']:
 				outLines.append(str(lEntry[5].ljust(40,' ') + ' ' + lEntry[4].rjust(4,' ') + ' ' + '[' + lEntry[3] + '/' + lEntry[1] + ']'))
 	return outLines
 
@@ -37,13 +37,13 @@ def nowDateTimeStamp():
 	return dateTimeStamp
 
 
-def sendMail(smtpConfig, subject, message, **keyWordArgs):
+def sendMail(smtpConfig, config, subject, message, **keyWordArgs):
 	try:
 		a = keyWordArgs['attach']
 		attachPart = ' -a ' + a
 	except KeyError:
 		attachPart = ''
-	out = os.popen('sendEmail -f "' + smtpConfig['sender'] + '" -s ' + smtpConfig['server'] + ':' + str(smtpConfig['port']) + ' -xu "' + smtpConfig['user'] + '" -xp "' + smtpConfig['password'] + '" -t "' + smtpConfig['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
+	out = os.popen('sendEmail -f "' + smtpConfig['user'] + '" -s ' + smtpConfig['server'] + ':' + str(smtpConfig['port']) + ' -xu "' + smtpConfig['user'] + '" -xp "' + smtpConfig['password'] + '" -t "' + config['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
 
 	if 'ERROR' in out: 
 		return False
@@ -57,8 +57,8 @@ def sendMail(smtpConfig, subject, message, **keyWordArgs):
 
 
 hostName = os.popen('cat /etc/hostname').read()
-smtpConfig = readConfig('/opt/s87/config/s87notify.conf')
-
+config = readConfig('/opt/s87/config/s87notify.conf')
+smtpConfig = readConfig('/opt/s87/config/smtp.passwd')
 
 
 
@@ -71,7 +71,7 @@ try:
 		outLines = getHDDInfo()
 		content = 'Current HDD values:\n\n'
 		content +=  os.linesep.join(outLines)
-		sendMail(smtpConfig, hostName + ': Daily HDD info.', content.replace(' ','.')) 
+		sendMail(smtpConfig, config, hostName + ': Daily HDD info.', content.replace(' ','.')) 
 		sys.exit()
 except IndexError:
 	pass
@@ -120,7 +120,7 @@ try:
 				if percentInUse > 84:
 					if counterHDD[hdd] == 0:
 						content = str('HDD nearly full! \n\n'+hdd).replace(' ','.')
-						sendMail(smtpConfig, hostName + ': HDD nearly full.', content)
+						sendMail(smtpConfig, config,  hostName + ': HDD nearly full.', content)
 				else:
 					counterHDD[hdd] = 0
 
