@@ -28,7 +28,7 @@ import basic
 import poplib
 import smtplib
 import email
-import time, datetime
+import time, datetime, thread
 
 
 
@@ -140,16 +140,38 @@ class EmailClient(object):
             mails.append(mail)
         return mails
 
+class MailQueue(object):
+    def __init__(self, server, username, password):
+        self.queue = []
+        self.mailServerAddress = server
+        self.mailClient = EmailClient(server, username, password)
+        
+    def mailsAvailable(self):
+        return len(self.queue)
+        
+    def addMail(self, sender, receiver, subject, content):
+        self.queue.insert(0, Mail(sender, receiver, subject, content))
+
+    def send(self):
+        self.sendMail()
+
+    def sendMail(self):
+        if self.mailsAvailable() > 0:
+            if not basic.ping(self.mailServerAddress):
+                return            
+            self.mailClient.login()     
+            while self.mailsAvailable() > 0:
+                if not basic.ping(self.mailServerAddress):
+                    self.mailClient.logout()
+                    break
+                mail = self.queue[-1]
+                self.mailClient.sendMail(mail)
+                self.queue.pop()
+        return
+                
             
+
+        
   
-#emc = EmailClient('mail.silvano87.de', 'server@silvano87.de', 'ABCabc123456')
-#emc.login()
-#m = Mail('server@silvano87.de', 'server@silvano87.de', 'Betreff2', 'Inhalt2')
-#emc.sendMail(m)
-#emc.logout()
-
-
-
-
 
 

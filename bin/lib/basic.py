@@ -57,6 +57,7 @@ def processOpen(cmd):
     p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     return p.communicate()
 
+
  
 def encrypt(key, password):
     out, err = processOpen(CRYPTPATH + ' -enc '+ key + ' ' + password)
@@ -67,7 +68,7 @@ def encrypt(key, password):
 
 def decrypt(key, encryptedPassword):
     out, err = processOpen(CRYPTPATH + ' -dec '+ key + ' ' + encryptedPassword)
-    out = out.replace(os.linesep,'')
+    out = out.replace('\n','')
     out = out.replace('decrypted password: ','')
     return out   
 
