@@ -166,7 +166,7 @@ try:
         counter += 1
         if counter > 1:
             counter = 0
-            renewConfig('/opt/s87/config/s87notify.conf')
+            config = renewConfig('/opt/s87/config/s87notify.conf')
 except KeyboardInterrupt:
     print 'exit'
     sys.exit()
