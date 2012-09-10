@@ -27,9 +27,19 @@ import log
 import system
 import basic
 import mail
+
+
+def renewConfig(filePath):
+    config = basic.configReader.readConfig(filePath)
+    if os.path.isfile('/opt/s87/DEBUG'):
+        config['logLevel'] = 99    
+    return config
+
 PROCESSNAME = os.path.split(sys.argv[0])[1]
 hostName = basic.HOSTNAME
-config = basic.configReader.readConfig('/opt/s87/config/s87notify.conf')
+config = renewConfig('/opt/s87/config/s87notify.conf')
+#config = basic.configReader.readConfig('/opt/s87/config/s87notify.conf')
+
 mailServer = mail.MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
 
 if os.path.isfile('/opt/s87/DEBUG'):
@@ -84,6 +94,7 @@ except IndexError:
 tempWarningSended = 0
 tempAlertSended = 0
 loadWarning = 0
+counter = 0
 
 hddInfo = getHDDInfo()
 counterHDD = {}
@@ -152,6 +163,10 @@ try:
 
         mailServer.send()
         time.sleep(2)
+        counter += 1
+        if counter > 1:
+            counter = 0
+            renewConfig('/opt/s87/config/s87notify.conf')
 except KeyboardInterrupt:
     print 'exit'
     sys.exit()
