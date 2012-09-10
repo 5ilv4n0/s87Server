@@ -21,7 +21,7 @@
 #  MA 02110-1301, USA.
 #  
 #  
-import os, time
+import os, sys, time
 sys.path.append('/opt/s87/bin/lib')
 import basic
 

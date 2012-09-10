@@ -23,7 +23,7 @@
 # 
 import os, subprocess, re
 HOSTNAME = os.popen('cat /etc/hostname').read().replace(os.linesep,'') 
-CRYPTPATH = '/opt/repository/s87Server/bin/lib/crypt'
+CRYPTPATH = '/opt/s87/bin/lib/crypt'
 
 
 def isDirWritable(path):
