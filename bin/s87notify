@@ -25,6 +25,7 @@ import os, sys, json, time, re
 sys.path.append('/opt/s87/bin/lib')
 import log
 import system
+import basic
 processName = os.path.split(sys.argv[0])[1]
 debug = False
 if os.path.isfile('/opt/s87/DEBUG'):
@@ -89,7 +90,7 @@ def sendMail(smtpConfig, config, subject, message, **keyWordArgs):
 
 
 
-hostName = os.popen('cat /etc/hostname').read()
+hostName = basic.HOSTNAME
 config = readConfig('/opt/s87/config/s87notify.conf')
 smtpConfig = readConfig('/opt/s87/config/smtp.passwd')
 

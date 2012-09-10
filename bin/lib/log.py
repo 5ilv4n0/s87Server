@@ -22,17 +22,9 @@
 #  
 #  
 import os, time
+sys.path.append('/opt/s87/bin/lib')
+import basic
 
-
-def isDirWritable(path):
-    testFilePath = os.path.join(path, 'test')
-    try:
-        with open(testFilePath, 'w') as f:
-            pass
-        os.remove(testFilePath)
-        return True
-    except IOError:
-        return False
 
 
 
@@ -41,7 +33,7 @@ class LogFile(object):
         self.filePath = os.path.abspath(filePath)
         self.fileName = os.path.split(self.filePath)[1]
         self.processName = processName
-        if not isDirWritable(self.filePath):
+        if not basic.isDirWritable(self.filePath):
             self.filePath = os.path.join('/tmp', self.fileName)
         self.buffer = open(self.filePath, 'a')
 
@@ -67,6 +59,6 @@ class LogFile(object):
         
         
     def nowDateTimeStamp(self):
-        dateTimeStamp = time.strftime("%d.%m.%Y - %H:%M:%S", time.localtime())
+        dateTimeStamp = time.strftime("%d.%m.%Y %H:%M:%S", time.localtime())
         return dateTimeStamp
 

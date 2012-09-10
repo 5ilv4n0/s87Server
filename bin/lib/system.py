@@ -22,6 +22,8 @@
 #  
 #  
 import os, re
+sys.path.append('/opt/s87/bin/lib')
+import basic
 
 
 def getCPULoad():
