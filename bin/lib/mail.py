@@ -129,15 +129,17 @@ class EmailClient(object):
             for line in mailContent:
                 if not line[:1] == '\t':
                     content += line +'\n'
-            headers = email.Parser().parsestr(content)
-            mailc = email.message_from_string(content)
-            for part in mailc.walk():
-                if part.get_content_type() == 'text/plain':
-                    headers['body'] = part.get_payload()         
-            mail['sender'] = headers['from']
-            mail['subject'] = headers['subject']
-            mail['date'] = headers['date']
-            mail['content'] = headers['body']
+            print content
+            print '--------------------------END-OF-MAIL--------------------'
+            #headers = email.Parser().parsestr(content)
+            #mailc = email.message_from_string(content)
+            #for part in mailc.walk():
+            #    if part.get_content_type() == 'text/plain':
+            #        headers['body'] = part.get_payload()         
+            #mail['sender'] = headers['from']
+            #mail['subject'] = headers['subject']
+            #mail['date'] = headers['date']
+            #mail['content'] = headers['body']
             mails.append(mail)
         return mails
 
@@ -174,5 +176,7 @@ class MailQueue(object):
 
         
   
-
-
+#c = EmailClient('mail.silvano87.de','server@silvano87.de','ABCabc123456')
+#c.login()
+#print c.getMails()
+#c.logout()
