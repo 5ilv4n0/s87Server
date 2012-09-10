@@ -59,10 +59,9 @@ try:
             if r == True:
                 logging.info('sync hwclock.')
                 setHWClock()
-                logging.info('wait 3600s.')
-                time.sleep(3600)
+                logging.info('wait ' + str(config['updateInterval']) + 'sec...')
+                time.sleep(config['updateInterval'])
                 break
-        logging.info('wait 10s.')
         time.sleep(10)
 except KeyboardInterrupt:
     print 'exit.'
