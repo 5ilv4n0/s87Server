@@ -200,18 +200,18 @@ try:
                 #~ email(config, mailServer, hostName + ': CPU Temperature OK!', content)
 
 
-
-        hddInfo = getHDDInfo()
-        for hdd in hddInfo:
-            r = re.match(r'.+[ ]+(\d+)%.+', hdd)
-            if not r == None:
-                percentInUse = int(r.groups()[0])
-                if percentInUse > config['usedSpaceWarning']-1:
-                    if counterHDD[hdd] == 0:
-                        content = str(hdd).replace(' ','.')
-                        email(config, mailServer, hostName + ': HDD capacity WARNING!', content)
-                else:
-                    counterHDD[hdd] = 0
+#~ 
+        #~ hddInfo = getHDDInfo()
+        #~ for hdd in hddInfo:
+            #~ r = re.match(r'.+[ ]+(\d+)%.+', hdd)
+            #~ if not r == None:
+                #~ percentInUse = int(r.groups()[0])
+                #~ if percentInUse > config['usedSpaceWarning']-1:
+                    #~ if counterHDD[hdd] == 0:
+                        #~ content = str(hdd).replace(' ','.')
+                        #~ email(config, mailServer, hostName + ': HDD capacity WARNING!', content)
+                #~ else:
+                    #~ counterHDD[hdd] = 0
 
 
 
