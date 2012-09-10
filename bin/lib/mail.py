@@ -28,9 +28,7 @@ import basic
 import poplib
 import smtplib
 import email
-import time, datetime, thread
-
-
+import time, datetime,  thread
 
 class Mail(object):
     def __init__(self, sender, receiver, subject, content):
@@ -42,8 +40,8 @@ class Mail(object):
 
 
     def timeStamp(self):
-        dateTimeStamp = time.strftime('%a, %d %b %Y %H:%M:%S +0200', time.localtime())
-        os.system('echo "'+dateTimeStamp+'" > /tmp/nnn')
+        timeZone = os.popen('date +%z').read().replace(os.linesep,'')
+        dateTimeStamp = time.strftime('%a, %d %b %Y %H:%M:%S '+timeZone, time.localtime())
         return dateTimeStamp
 
 
@@ -173,7 +171,6 @@ class MailQueue(object):
         return
                 
             
-
         
   
 #c = EmailClient('mail.silvano87.de','server@silvano87.de','ABCabc123456')
