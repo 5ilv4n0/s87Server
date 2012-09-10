@@ -59,7 +59,7 @@ try:
             if r == True:
                 logging.info('sync hwclock.')
                 setHWClock()
-                logging.info('wait ' + str(config['updateInterval']) + 'sec...')
+                logging.info('wait ' + str(config['updateInterval']) + ' sec...')
                 time.sleep(config['updateInterval'])
                 break
         time.sleep(10)
