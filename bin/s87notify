@@ -134,6 +134,12 @@ def getCPUCurrentCriticalTemp():
     critical = float(critical)
     return current#, critical
 
+def getCPULoad():
+    uptime = os.popen('uptime').read()
+    reFloat = re.compile(r'\d\.\d\d')
+    loadAvg = reFloat.findall(uptime)
+    return loadAvg[0]
+
 def getHDDInfo():
     content = os.popen('df -h | grep /dev/').read()
     outLines = []
@@ -160,7 +166,8 @@ except IndexError:
 
 
 events = []
-events.append( NormalToHigh_Event('CPU-Temperature', getCPUCurrentCriticalTemp, 40.0, 45.0, 60, email, config, mailServer, ' C') )
+events.append( NormalToHigh_Event('CPU-Temperature', getCPUCurrentCriticalTemp, 40.0, 60.0, 60, email, config, mailServer, ' C') )
+events.append( NormalToHigh_Event('CPU-Load', getCPULoad, 0.66, 1.00, 300, email, config, mailServer, ' Load') )
 
 
 tempWarningSended = 0
