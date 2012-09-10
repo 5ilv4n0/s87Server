@@ -167,7 +167,7 @@ except IndexError:
 
 events = []
 events.append( NormalToHigh_Event('CPU-Temperature', getCPUCurrentCriticalTemp, 40.0, 60.0, 60, email, config, mailServer, ' C') )
-events.append( NormalToHigh_Event('CPU-Load', getCPULoad, 0.66, 1.00, 300, email, config, mailServer, ' Load') )
+events.append( NormalToHigh_Event('CPU-Load', getCPULoad, 0.66, 1.00, 300, email, config, mailServer, '') )
 
 
 tempWarningSended = 0
