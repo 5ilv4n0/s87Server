@@ -51,7 +51,7 @@ def getHDDInfo():
         if not entry == '':
             lEntry = entry.split()
             if lEntry[5] in config['mountPoints']:
-                outLines.append(str(lEntry[5].ljust(40,' ') + ' ' + lEntry[4].rjust(4,' ') + ' ' + '[' + lEntry[3] + '/' + lEntry[1] + ']'))
+                outLines.append(str(lEntry[5].ljust(40,' ') + ' ' + lEntry[4].rjust(4,' ') + ' ' + '[' + lEntry[3] + ' free]'))
     return outLines
 
 
