@@ -98,6 +98,7 @@ counter = 0
 
 hddInfo = getHDDInfo()
 counterHDD = {}
+
 for hdd in hddInfo:
     counterHDD[hdd] = 0
 
@@ -167,6 +168,8 @@ try:
         if counter > 1:
             counter = 0
             config = renewConfig('/opt/s87/config/s87notify.conf')
+            for hdd in hddInfo:
+                counterHDD[hdd] = 0
             
 except KeyboardInterrupt:
     print 'exit'
