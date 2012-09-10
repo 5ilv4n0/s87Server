@@ -167,6 +167,7 @@ try:
         if counter > 1:
             counter = 0
             config = renewConfig('/opt/s87/config/s87notify.conf')
+            
 except KeyboardInterrupt:
     print 'exit'
     sys.exit()
