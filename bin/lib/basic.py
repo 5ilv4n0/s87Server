@@ -27,6 +27,16 @@ CRYPTPATH = '/opt/s87/bin/lib/crypt'
 #CRYPTPATH = '/opt/repository/s87Server/bin/lib/crypt'
 
 
+def isJsonFile(filePath):
+    if not os.path.isfile(filePath):
+        return False
+    with open(filePath, 'r') as f:
+        try:
+            json.load(f)
+            return True
+        except ValueError:
+            return False
+
 def isDirWritable(path):
     testFilePath = os.path.join(path, 'test')
     try:
@@ -37,14 +47,12 @@ def isDirWritable(path):
     except IOError:
         return False
 
-
 def ping(address):
     p = os.system('ping -c 1 -w 1 ' + address + ' > /dev/null 2>&1')
     if not p == 0:
         return False
     return True
     
-
 def getHostKey():
     with open('/etc/ssh/ssh_host_rsa_key.pub','r') as f:
         keyFile = f.read()
@@ -53,19 +61,11 @@ def getHostKey():
         return HOSTNAME
     return r.groups()[0]
 
- 
-def processOpen(cmd):
-    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
-    return p.communicate()
-
-
- 
 def encrypt(key, password):
     out, err = processOpen(CRYPTPATH + ' -enc '+ key + ' ' + password)
     out = out.replace(os.linesep,'')
     out = out.replace('encrypted password: ','')
     return out
-
 
 def decrypt(key, encryptedPassword):
     out, err = processOpen(CRYPTPATH + ' -dec '+ key + ' ' + encryptedPassword)
@@ -73,9 +73,27 @@ def decrypt(key, encryptedPassword):
     out = out.replace('decrypted password: ','')
     return out   
 
-
 def createPassword(key, length=255):
     out, err = processOpen(CRYPTPATH + ' -gen '+ key + ' ' + str(length))
     out = out.replace(os.linesep,'')
     r = re.match(r'decrypted password: (.+)encrypted password: (.+)', out)
     return r.groups()
+ 
+def processOpen(cmd):
+    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+    return p.communicate()
+
+
+
+class ConfigReader(object):
+    def __init__(self):
+        pass
+        
+        
+    def readConfig(self, filePath):
+        if isJsonFile(filePath):
+            with open(jsonFilePath,'r') as f:
+                config = json.load(f)
+            return config
+                     
+configReader = ConfigReader()

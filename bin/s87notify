@@ -28,23 +28,13 @@ import system
 import basic
 import mail
 PROCESSNAME = os.path.split(sys.argv[0])[1]
-
-def readConfig(jsonFilePath):
-    with open(jsonFilePath,'r') as f:
-        config = json.load(f)
-    return config
-
-
 hostName = basic.HOSTNAME
-config = readConfig('/opt/s87/config/s87notify.conf')
+config = basic.configReader.readConfig('/opt/s87/config/s87notify.conf')
+mailServer = mail.MailQueue(config['mailServer'], config['smtpUser'], basic.decrypt(basic.getHostKey(), config['password']))    
 
 if os.path.isfile('/opt/s87/DEBUG'):
     config['logLevel'] = 99
-
-mailServer = mail.MailQueue(config['mailServer'], config['smtpUser'], basic.decrypt(basic.getHostKey(), config['password']))    
 logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
-
-
 
 
 
@@ -70,34 +60,6 @@ def getHDDInfo():
             if lEntry[5] in config['mountPoints']:
                 outLines.append(str(lEntry[5].ljust(40,' ') + ' ' + lEntry[4].rjust(4,' ') + ' ' + '[' + lEntry[3] + ' free]'))
     return outLines
-
-
-
-
-#~ def nowDateTimeStamp():
-    #~ dateTimeStamp = time.strftime("[%d.%m.%Y - %H:%M:%S]", time.localtime())
-    #~ return dateTimeStamp
-#~ 
-#~ def sendMail(config, subject, message, **keyWordArgs):
-    #~ try:
-        #~ a = keyWordArgs['attach']
-        #~ attachPart = ' -a ' + a
-    #~ except KeyError:
-        #~ attachPart = ''
-    #~ out = os.popen('sendEmail -f "' + config['smtpUser'] + '" -s ' + config['mailServer'] + ':' + str(config['smtpPort']) + ' -xu "' + config['smtpUser'] + '" -xp "' + basic.decrypt(basic.getHostKey(), config['password']) + '" -t "' + config['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
-    #~ if 'ERROR' in out: 
-        #~ return False
-    #~ return True
-
-
-
-
-
-
-
-
-
-
 
 
 
