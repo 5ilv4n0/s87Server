@@ -72,13 +72,13 @@ def nowDateTimeStamp():
     return dateTimeStamp
 
 
-def sendMail(smtpConfig, config, subject, message, **keyWordArgs):
+def sendMail(config, subject, message, **keyWordArgs):
     try:
         a = keyWordArgs['attach']
         attachPart = ' -a ' + a
     except KeyError:
         attachPart = ''
-    out = os.popen('sendEmail -f "' + smtpConfig['user'] + '" -s ' + smtpConfig['server'] + ':' + str(smtpConfig['port']) + ' -xu "' + smtpConfig['user'] + '" -xp "' + smtpConfig['password'] + '" -t "' + config['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
+    out = os.popen('sendEmail -f "' + config['user'] + '" -s ' + config['mailServer'] + ':' + str(config['port']) + ' -xu "' + config['user'] + '" -xp "' + basic.decrypt(basic.getHostKey(), config['password']) + '" -t "' + config['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
     if 'ERROR' in out: 
         return False
     return True
@@ -92,7 +92,7 @@ def sendMail(smtpConfig, config, subject, message, **keyWordArgs):
 
 hostName = basic.HOSTNAME
 config = readConfig('/opt/s87/config/s87notify.conf')
-smtpConfig = readConfig('/opt/s87/config/smtp.passwd')
+
 
 
 
@@ -105,7 +105,7 @@ try:
         outLines = getHDDInfo()
         content = 'Current HDD values:\n\n'
         content +=  os.linesep.join(outLines)
-        sendMail(smtpConfig, config, hostName + ': Daily HDD info.', content.replace(' ','.')) 
+        sendMail(config, hostName + ': Daily HDD info.', content.replace(' ','.')) 
         sys.exit()
 except IndexError:
     pass
@@ -131,19 +131,19 @@ try:
         if currentCPUTemp > criticalCPUTemp - 10:
             if tempAlertSended == 0:
                 content = 'CPU Temperature very high! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                sendMail(smtpConfig, hostName + ': CPU Temperature ALERT!', content) 
+                sendMail(config, hostName + ': CPU Temperature ALERT!', content) 
                 tempAlertSended = 1
         if currentCPUTemp > criticalCPUTemp - 20:
             if tempWarningSended == 0 and tempAlertSended == 0:
                 content = 'CPU Temperature is rising! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                sendMail(smtpConfig, hostName + ': CPU Temperature WARNING!', content) 
+                sendMail(config, hostName + ': CPU Temperature WARNING!', content) 
                 tempWarningSended = 1
         if tempAlertSended == 1 or tempWarningSended == 1:
             if currentCPUTemp < criticalCPUTemp - 30:
                 tempAlertSended = 0
                 tempWarningSended = 0
                 content = 'CPU Temperature OK again! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                sendMail(smtpConfig, hostName + ': CPU Temperature is OK now.', content) 
+                sendMail(config, hostName + ': CPU Temperature is OK now.', content) 
 
 
 
@@ -155,7 +155,7 @@ try:
                 if percentInUse > 84:
                     if counterHDD[hdd] == 0:
                         content = str('HDD nearly full! \n\n'+hdd).replace(' ','.')
-                        sendMail(smtpConfig, config,  hostName + ': HDD nearly full.', content)
+                        sendMail(config,  hostName + ': HDD nearly full.', content)
                 else:
                     counterHDD[hdd] = 0
 
@@ -164,7 +164,7 @@ try:
         if float(cpuLoads[0]) > 0.99:
             if loadWarning == 0:
                 content = 'CPU load is high.\n\n' + json.dumps(cpuLoads)
-                sendMail(smtpConfig, config,  hostName + ': high CPU load.', content)
+                sendMail(config,  hostName + ': high CPU load.', content)
                 loadWarning = 1
         if float(cpuLoads[0]) < 0.67:
             loadWarning = 0
