@@ -166,11 +166,11 @@ events.append( NormalToHigh_Event('CPU-Temperature', getCPUCurrentCriticalTemp, 
 tempWarningSended = 0
 tempAlertSended = 0
 loadWarning = 0
-
-hddInfo = getHDDInfo()
-counterHDD = {}
-for hdd in hddInfo:
-    counterHDD[hdd] = 0
+#~ 
+#~ hddInfo = getHDDInfo()
+#~ counterHDD = {}
+#~ for hdd in hddInfo:
+    #~ counterHDD[hdd] = 0
 
 
 logging.info(PROCESSNAME + ' started.')
@@ -224,12 +224,12 @@ try:
 
 
 
-	
-        
-        for hdd in hddInfo:
-            counterHDD[hdd] += 1
-            if counterHDD[hdd] > 1800:
-                counterHDD[hdd] = 0
+	#~ 
+        #~ 
+        #~ for hdd in hddInfo:
+            #~ counterHDD[hdd] += 1
+            #~ if counterHDD[hdd] > 1800:
+                #~ counterHDD[hdd] = 0
 
 
 
