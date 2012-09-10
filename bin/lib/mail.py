@@ -42,7 +42,7 @@ class Mail(object):
 
 
     def timeStamp(self):
-        dateTimeStamp = time.strftime('%a, %d %b %Y %H:%M:%S +0002', time.localtime())
+        dateTimeStamp = time.strftime('%a, %d %b %Y %H:%M:%S +0200', time.localtime())
         os.system('echo "'+dateTimeStamp+'" > /tmp/nnn')
         return dateTimeStamp
 
