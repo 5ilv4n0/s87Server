@@ -153,9 +153,9 @@ class MailQueue(object):
         self.queue.insert(0, Mail(sender, receiver, subject, content))
 
     def send(self):
-        self.sendMail()
+        self.sendMails()
 
-    def sendMail(self):
+    def sendMails(self):
         if self.mailsAvailable() > 0:
             if not basic.ping(self.mailServerAddress):
                 return            

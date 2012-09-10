@@ -26,7 +26,7 @@ sys.path.append('/opt/s87/bin/lib')
 import log
 import system
 import basic
-
+import mail
 processName = os.path.split(sys.argv[0])[1]
 debug = False
 if os.path.isfile('/opt/s87/DEBUG'):
@@ -124,6 +124,10 @@ for hdd in hddInfo:
     counterHDD[hdd] = 0
 
 
+
+mailServer = mail.MailQueue(config['mailServer'], config['smtpUser'], basic.decrypt(basic.getHostKey(), config['password']))
+mailServer.addMail(config['smtpUser'], config['smtpUser'], hostName+': s87notify started...', 'Can U read this?')
+
 try:
     while True:
 
@@ -178,6 +182,11 @@ try:
             counterHDD[hdd] += 1
             if counterHDD[hdd] > 1800:
                 counterHDD[hdd] = 0
+
+
+
+
+        mailServer.send()
         time.sleep(2)
 except KeyboardInterrupt:
     print 'exit'
