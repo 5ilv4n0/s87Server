@@ -138,7 +138,7 @@ def getCPULoad():
     uptime = os.popen('uptime').read()
     reFloat = re.compile(r'\d\.\d\d')
     loadAvg = reFloat.findall(uptime)
-    return loadAvg[0]
+    return float(loadAvg[0])
 
 def getHDDInfo():
     content = os.popen('df -h | grep /dev/').read()
