@@ -21,7 +21,7 @@
 #  MA 02110-1301, USA.
 #  
 # 
-import os, subprocess, re
+import os, subprocess, re, json
 HOSTNAME = os.popen('cat /etc/hostname').read().replace(os.linesep,'') 
 CRYPTPATH = '/opt/s87/bin/lib/crypt'
 #CRYPTPATH = '/opt/repository/s87Server/bin/lib/crypt'
