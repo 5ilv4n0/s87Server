@@ -29,26 +29,30 @@ import basic
 
 
 class LogFile(object):
-    def __init__(self, processName, filePath):
+    def __init__(self, processName, filePath, logLevel=0):
         self.filePath = os.path.abspath(filePath)
         self.fileName = os.path.split(self.filePath)[1]
         self.processName = processName
         if not basic.isDirWritable(self.filePath):
             self.filePath = os.path.join('/tmp', self.fileName)
         self.buffer = open(self.filePath, 'a')
-
+        self.logLevel = logLevel
 
     def debug(self, message):
-        self.write('DEBUG', message)
+        if self.logLevel > 2:
+            self.write('DEBUG', message)
 
     def info(self, message):
-        self.write('INFO', message)
+        if self.logLevel > 1:
+            self.write('INFO', message)
         
     def warning(self, message):
-        self.write('WARNING', message)
+        if self.logLevel > 0:
+            self.write('WARNING', message)
         
     def critical(self, message):
-        self.write('CRITICAL', message)
+        if self.logLevel > -1:
+            self.write('CRITICAL', message)
         
     
     def write(self, tag, message):

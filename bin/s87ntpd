@@ -24,25 +24,26 @@
 import os, time, sys, json
 sys.path.append('/opt/s87/bin/lib')
 import log
-processName = os.path.split(sys.argv[0])[1]
-debug = False
-if os.path.isfile('/opt/s87/DEBUG'):
-    debug = True
-    logging = log.LogFile(processName, '/tmp/' + processName + '.log')
-
+PROCESSNAME = os.path.split(sys.argv[0])[1]
 
 def readConfig(jsonFilePath):
     with open(jsonFilePath,'r') as f:
         config = json.load(f)
     return config
 
+config = readConfig('/opt/s87/config/s87ntpd.conf')
+
+if os.path.isfile('/opt/s87/DEBUG'):
+    config['logLevel'] = 99
+logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
+
 
 def syncTime(server):
     out = os.popen('ntpdate -u ' + server + ' 2>&1').read()
     if 'no server suitable' in out:
-        if debug: logging.warning(server + ' not available!')
+        logging.warning(server + ' not available!')
         return False
-    if debug: logging.info('timesync successfully. '+ out.replace(os.linesep, ''))
+    logging.info('timesync successfully. '+ out.replace(os.linesep, ''))
     return True
 
 
@@ -52,20 +53,19 @@ def setHWClock():
 
 
 
-config = readConfig('/opt/s87/config/s87ntpd.conf')
-if debug: logging.info('starting...')
+logging.info('starting...')
 try:
     while True:
         for server in config['ntpServers']:
-            if debug: logging.info('try ntp server ' + server)
+            logging.info('try ntp server ' + server)
             r = syncTime(server)
             if r == True:
-                if debug: logging.info('sync hwclock.')
+                logging.info('sync hwclock.')
                 setHWClock()
-                if debug: logging.info('wait 3600s.')
+                logging.info('wait 3600s.')
                 time.sleep(3600)
                 break
-        if debug: logging.info('wait 10s.')
+        logging.info('wait 10s.')
         time.sleep(10)
 except KeyboardInterrupt:
     print 'exit.'

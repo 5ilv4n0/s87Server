@@ -27,13 +27,29 @@ import log
 import system
 import basic
 import mail
-processName = os.path.split(sys.argv[0])[1]
-debug = False
+PROCESSNAME = os.path.split(sys.argv[0])[1]
+
+def readConfig(jsonFilePath):
+    with open(jsonFilePath,'r') as f:
+        config = json.load(f)
+    return config
+
+
+hostName = basic.HOSTNAME
+config = readConfig('/opt/s87/config/s87notify.conf')
+
 if os.path.isfile('/opt/s87/DEBUG'):
-    debug = True
-    logging = log.LogFile(processName, '/tmp/' + processName + '.log')
+    config['logLevel'] = 99
+
+mailServer = mail.MailQueue(config['mailServer'], config['smtpUser'], basic.decrypt(basic.getHostKey(), config['password']))    
+logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
 
 
+
+
+
+def email(config, mailServer, subject, message):
+    mailServer.addMail(config['smtpUser'], config['smtpUser'], subject, message)
 
 
 def getCPUCurrentCriticalTemp():
@@ -58,20 +74,9 @@ def getHDDInfo():
 
 
 
-
-
-
-
-def readConfig(jsonFilePath):
-    with open(jsonFilePath,'r') as f:
-        config = json.load(f)
-    return config
-
-
 def nowDateTimeStamp():
     dateTimeStamp = time.strftime("[%d.%m.%Y - %H:%M:%S]", time.localtime())
     return dateTimeStamp
-
 
 def sendMail(config, subject, message, **keyWordArgs):
     try:
@@ -91,8 +96,7 @@ def sendMail(config, subject, message, **keyWordArgs):
 
 
 
-hostName = basic.HOSTNAME
-config = readConfig('/opt/s87/config/s87notify.conf')
+
 
 
 
@@ -107,6 +111,7 @@ try:
         content = 'Current HDD values:\n\n'
         content +=  os.linesep.join(outLines)
         sendMail(config, hostName + ': Daily HDD info.', content.replace(' ','.')) 
+        email(config, mailServer, hostName + ': Daily HDD info', content.replace(' ','.'))
         sys.exit()
 except IndexError:
     pass
@@ -124,10 +129,7 @@ for hdd in hddInfo:
     counterHDD[hdd] = 0
 
 
-
-mailServer = mail.MailQueue(config['mailServer'], config['smtpUser'], basic.decrypt(basic.getHostKey(), config['password']))
-mailServer.addMail(config['smtpUser'], config['smtpUser'], hostName+': s87notify started...', 'Can U read this?')
-
+logging.info(PROCESSNAME + ' started.')
 try:
     while True:
 
@@ -136,19 +138,22 @@ try:
         if currentCPUTemp > criticalCPUTemp - 10:
             if tempAlertSended == 0:
                 content = 'CPU Temperature very high! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                sendMail(config, hostName + ': CPU Temperature ALERT!', content) 
+                #sendMail(config, hostName + ': CPU Temperature ALERT!', content)
+                email(config, mailServer, hostName + ': CPU Temperature ALERT!', content)
                 tempAlertSended = 1
         if currentCPUTemp > criticalCPUTemp - 20:
             if tempWarningSended == 0 and tempAlertSended == 0:
                 content = 'CPU Temperature is rising! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                sendMail(config, hostName + ': CPU Temperature WARNING!', content) 
+                #sendMail(config, hostName + ': CPU Temperature WARNING!', content) 
+                email(config, mailServer, hostName + ': CPU Temperature WARNING!', content)
                 tempWarningSended = 1
         if tempAlertSended == 1 or tempWarningSended == 1:
             if currentCPUTemp < criticalCPUTemp - 30:
                 tempAlertSended = 0
                 tempWarningSended = 0
                 content = 'CPU Temperature OK again! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                sendMail(config, hostName + ': CPU Temperature is OK now.', content) 
+                #sendMail(config, hostName + ': CPU Temperature is OK now.', content) 
+                email(config, mailServer, hostName + ': CPU Temperature OK!', content)
 
 
 
@@ -160,7 +165,8 @@ try:
                 if percentInUse > 84:
                     if counterHDD[hdd] == 0:
                         content = str('HDD nearly full! \n\n'+hdd).replace(' ','.')
-                        sendMail(config,  hostName + ': HDD nearly full.', content)
+                        #sendMail(config,  hostName + ': HDD nearly full.', content)
+                        email(config, mailServer, hostName + ': HDD nearly full!', content)
                 else:
                     counterHDD[hdd] = 0
 
@@ -169,7 +175,8 @@ try:
         if float(cpuLoads[0]) > 0.99:
             if loadWarning == 0:
                 content = 'CPU load is high.\n\n' + json.dumps(cpuLoads)
-                sendMail(config,  hostName + ': high CPU load.', content)
+                #sendMail(config,  hostName + ': high CPU load.', content)
+                email(config, mailServer, hostName + ': CPU load high!', content)
                 loadWarning = 1
         if float(cpuLoads[0]) < 0.67:
             loadWarning = 0
