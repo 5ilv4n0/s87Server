@@ -133,7 +133,7 @@ try:
                 percentInUse = int(r.groups()[0])
                 if percentInUse > config['usedSpaceWarning']-1:
                     if counterHDD[hdd] == 0:
-                        content = str('HDD nearly full! \n\n'+hdd).replace(' ','.')
+                        content = str('HDD capacity WARNING! \n\n'+hdd).replace(' ','.')
                         email(config, mailServer, hostName + ': HDD nearly full!', content)
                 else:
                     counterHDD[hdd] = 0
