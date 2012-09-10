@@ -165,9 +165,9 @@ class MailQueue(object):
                 if not basic.ping(self.mailServerAddress):
                     self.mailClient.logout()
                     break
-                mail = self.queue[-1]
+                mail = self.queue.pop()
                 self.mailClient.sendMail(mail)
-                self.queue.pop()
+                
         return
                 
             
