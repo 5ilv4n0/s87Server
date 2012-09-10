@@ -218,16 +218,16 @@ try:
                     #~ counterHDD[hdd] = 0
 
 
-
-
-        cpuLoads = system.getCPULoad()
-        if float(cpuLoads[0]) > 0.99:
-            if loadWarning == 0:
-                content = 'CPU load is high.\n\n' + json.dumps(cpuLoads)
-                email(config, mailServer, hostName + ': CPU load high!', content)
-                loadWarning = 1
-        if float(cpuLoads[0]) < 0.67:
-            loadWarning = 0
+#~ 
+#~ 
+        #~ cpuLoads = system.getCPULoad()
+        #~ if float(cpuLoads[0]) > 0.99:
+            #~ if loadWarning == 0:
+                #~ content = 'CPU load is high.\n\n' + json.dumps(cpuLoads)
+                #~ email(config, mailServer, hostName + ': CPU load high!', content)
+                #~ loadWarning = 1
+        #~ if float(cpuLoads[0]) < 0.67:
+            #~ loadWarning = 0
 
 
 
