@@ -112,6 +112,7 @@ try:
         content +=  os.linesep.join(outLines)
         sendMail(config, hostName + ': Daily HDD info.', content.replace(' ','.')) 
         email(config, mailServer, hostName + ': Daily HDD info', content.replace(' ','.'))
+        mailServer.send()
         sys.exit()
 except IndexError:
     pass
