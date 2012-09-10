@@ -180,24 +180,24 @@ logging.info(PROCESSNAME + ' started.')
 try:
     while True:
 
-
-        currentCPUTemp, criticalCPUTemp = getCPUCurrentCriticalTemp()
-        if currentCPUTemp > criticalCPUTemp - 10:
-            if tempAlertSended == 0:
-                content = 'CPU Temperature very high! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                email(config, mailServer, hostName + ': CPU Temperature ALERT!', content)
-                tempAlertSended = 1
-        if currentCPUTemp > criticalCPUTemp - 20:
-            if tempWarningSended == 0 and tempAlertSended == 0:
-                content = 'CPU Temperature is rising! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C' 
-                email(config, mailServer, hostName + ': CPU Temperature WARNING!', content)
-                tempWarningSended = 1
-        if tempAlertSended == 1 or tempWarningSended == 1:
-            if currentCPUTemp < criticalCPUTemp - 30:
-                tempAlertSended = 0
-                tempWarningSended = 0
-                content = 'CPU Temperature OK again! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C' 
-                email(config, mailServer, hostName + ': CPU Temperature OK!', content)
+#~ 
+        #~ currentCPUTemp, criticalCPUTemp = getCPUCurrentCriticalTemp()
+        #~ if currentCPUTemp > criticalCPUTemp - 10:
+            #~ if tempAlertSended == 0:
+                #~ content = 'CPU Temperature very high! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
+                #~ email(config, mailServer, hostName + ': CPU Temperature ALERT!', content)
+                #~ tempAlertSended = 1
+        #~ if currentCPUTemp > criticalCPUTemp - 20:
+            #~ if tempWarningSended == 0 and tempAlertSended == 0:
+                #~ content = 'CPU Temperature is rising! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C' 
+                #~ email(config, mailServer, hostName + ': CPU Temperature WARNING!', content)
+                #~ tempWarningSended = 1
+        #~ if tempAlertSended == 1 or tempWarningSended == 1:
+            #~ if currentCPUTemp < criticalCPUTemp - 30:
+                #~ tempAlertSended = 0
+                #~ tempWarningSended = 0
+                #~ content = 'CPU Temperature OK again! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C' 
+                #~ email(config, mailServer, hostName + ': CPU Temperature OK!', content)
 
 
 
