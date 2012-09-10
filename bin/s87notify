@@ -74,20 +74,20 @@ def getHDDInfo():
 
 
 
-def nowDateTimeStamp():
-    dateTimeStamp = time.strftime("[%d.%m.%Y - %H:%M:%S]", time.localtime())
-    return dateTimeStamp
-
-def sendMail(config, subject, message, **keyWordArgs):
-    try:
-        a = keyWordArgs['attach']
-        attachPart = ' -a ' + a
-    except KeyError:
-        attachPart = ''
-    out = os.popen('sendEmail -f "' + config['smtpUser'] + '" -s ' + config['mailServer'] + ':' + str(config['smtpPort']) + ' -xu "' + config['smtpUser'] + '" -xp "' + basic.decrypt(basic.getHostKey(), config['password']) + '" -t "' + config['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
-    if 'ERROR' in out: 
-        return False
-    return True
+#~ def nowDateTimeStamp():
+    #~ dateTimeStamp = time.strftime("[%d.%m.%Y - %H:%M:%S]", time.localtime())
+    #~ return dateTimeStamp
+#~ 
+#~ def sendMail(config, subject, message, **keyWordArgs):
+    #~ try:
+        #~ a = keyWordArgs['attach']
+        #~ attachPart = ' -a ' + a
+    #~ except KeyError:
+        #~ attachPart = ''
+    #~ out = os.popen('sendEmail -f "' + config['smtpUser'] + '" -s ' + config['mailServer'] + ':' + str(config['smtpPort']) + ' -xu "' + config['smtpUser'] + '" -xp "' + basic.decrypt(basic.getHostKey(), config['password']) + '" -t "' + config['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
+    #~ if 'ERROR' in out: 
+        #~ return False
+    #~ return True
 
 
 
@@ -109,8 +109,7 @@ try:
     if sys.argv[1] == '--dailyHDD':
         outLines = getHDDInfo()
         content = 'Current HDD values:\n\n'
-        content +=  os.linesep.join(outLines)
-        sendMail(config, hostName + ': Daily HDD info.', content.replace(' ','.')) 
+        content +=  os.linesep.join(outLines) 
         email(config, mailServer, hostName + ': Daily HDD info', content.replace(' ','.'))
         mailServer.send()
         sys.exit()
@@ -139,21 +138,18 @@ try:
         if currentCPUTemp > criticalCPUTemp - 10:
             if tempAlertSended == 0:
                 content = 'CPU Temperature very high! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                #sendMail(config, hostName + ': CPU Temperature ALERT!', content)
                 email(config, mailServer, hostName + ': CPU Temperature ALERT!', content)
                 tempAlertSended = 1
         if currentCPUTemp > criticalCPUTemp - 20:
             if tempWarningSended == 0 and tempAlertSended == 0:
-                content = 'CPU Temperature is rising! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                #sendMail(config, hostName + ': CPU Temperature WARNING!', content) 
+                content = 'CPU Temperature is rising! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C' 
                 email(config, mailServer, hostName + ': CPU Temperature WARNING!', content)
                 tempWarningSended = 1
         if tempAlertSended == 1 or tempWarningSended == 1:
             if currentCPUTemp < criticalCPUTemp - 30:
                 tempAlertSended = 0
                 tempWarningSended = 0
-                content = 'CPU Temperature OK again! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                #sendMail(config, hostName + ': CPU Temperature is OK now.', content) 
+                content = 'CPU Temperature OK again! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C' 
                 email(config, mailServer, hostName + ': CPU Temperature OK!', content)
 
 
@@ -163,10 +159,9 @@ try:
             r = re.match(r'.+[ ]+(\d+)%.+', hdd)
             if not r == None:
                 percentInUse = int(r.groups()[0])
-                if percentInUse > 84:
+                if percentInUse > config['usedSpaceWarning']:
                     if counterHDD[hdd] == 0:
                         content = str('HDD nearly full! \n\n'+hdd).replace(' ','.')
-                        #sendMail(config,  hostName + ': HDD nearly full.', content)
                         email(config, mailServer, hostName + ': HDD nearly full!', content)
                 else:
                     counterHDD[hdd] = 0
@@ -176,7 +171,6 @@ try:
         if float(cpuLoads[0]) > 0.99:
             if loadWarning == 0:
                 content = 'CPU load is high.\n\n' + json.dumps(cpuLoads)
-                #sendMail(config,  hostName + ': high CPU load.', content)
                 email(config, mailServer, hostName + ': CPU load high!', content)
                 loadWarning = 1
         if float(cpuLoads[0]) < 0.67:
