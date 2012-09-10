@@ -30,7 +30,7 @@ import mail
 PROCESSNAME = os.path.split(sys.argv[0])[1]
 hostName = basic.HOSTNAME
 config = basic.configReader.readConfig('/opt/s87/config/s87notify.conf')
-mailServer = mail.MailQueue(config['mailServer'], config['smtpUser'], basic.decrypt(basic.getHostKey(), config['password']))    
+mailServer = mail.MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
 
 if os.path.isfile('/opt/s87/DEBUG'):
     config['logLevel'] = 99
@@ -39,7 +39,7 @@ logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLe
 
 
 def email(config, mailServer, subject, message):
-    mailServer.addMail(config['smtpUser'], config['smtpUser'], subject, message)
+    mailServer.addMail(config['smtpConfig']['smtpUser'], config['smtpConfig']['smtpUser'], subject, message)
 
 
 def getCPUCurrentCriticalTemp():
