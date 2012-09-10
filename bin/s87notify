@@ -114,6 +114,7 @@ except IndexError:
 
 tempWarningSended = 0
 tempAlertSended = 0
+loadWarning = 0
 
 hddInfo = getHDDInfo()
 counterHDD = {}
@@ -158,14 +159,13 @@ try:
                     counterHDD[hdd] = 0
 
 
-        loadWarning = 0
         cpuLoads = system.getCPULoad()
         if cpuLoads[0] > 0.99:
             if loadWarning == 0:
                 content = 'CPU load is high.\n\n' + json.dumps(cpuLoads)
                 sendMail(smtpConfig, config,  hostName + ': high CPU load.', content)
                 loadWarning = 1
-        if cpuLoads[0] < 0.80:
+        if cpuLoads[0] < 0.67:
             loadWarning = 0
 
 
