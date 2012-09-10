@@ -54,7 +54,7 @@ logging.info('starting...')
 try:
     while True:
         for server in config['ntpServers']:
-            logging.info('try ntp server ' + server)
+            logging.info('try ntp server <' + server + '>')
             r = syncTime(server)
             if r == True:
                 logging.info('sync hwclock.')
