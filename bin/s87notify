@@ -47,8 +47,7 @@ class NormalToHigh_Event(object):
         value = self.getValue()
         if not self.eventInAction:
             if value >= self.maxValue:
-                subject = basic.HOSTNAME + ': ' + self.valueName + 'high!'
-                #subject = 'SERVER' + ': ' + self.valueName + ' high!'
+                subject = basic.HOSTNAME + ': ' + self.valueName + ' high!'
                 message = self.valueName + ': ' + str(value) + self.valueKind
                 self.sendMail(config, mailServer, subject, message)
                 for method in self.eventMethods:
@@ -57,8 +56,7 @@ class NormalToHigh_Event(object):
                 self.eventInActionStartTime = self.getTime()
         else:
             if value <= self.normalValue:
-                subject = basic.HOSTNAME + ': ' + self.valueName + 'normal.'
-                #subject = 'SERVER' + ': ' + self.valueName + ' normal.'
+                subject = basic.HOSTNAME + ': ' + self.valueName + ' normal.'
                 message = self.valueName + ': ' + str(value) + self.valueKind
                 self.sendMail(config, mailServer, subject, message)               
                 self.eventInAction = False
@@ -86,8 +84,7 @@ class High_Event(object):
         value = self.getValue()
         if not self.eventInAction:
             if value >= self.maxValue:
-                subject = basic.HOSTNAME + ': ' + self.valueName + 'high!'
-                #subject = 'SERVER' + ': ' + self.valueName + ' WARNING!'
+                subject = basic.HOSTNAME + ': ' + self.valueName + ' WARNING!'
                 message = self.valueName + ': ' + str(value) + self.valueKind
                 self.sendMail(config, mailServer, subject, message)
                 for method in self.eventMethods:
