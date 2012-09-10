@@ -92,7 +92,7 @@ class ConfigReader(object):
         
     def readConfig(self, filePath):
         if isJsonFile(filePath):
-            with open(jsonFilePath,'r') as f:
+            with open(filePath,'r') as f:
                 config = json.load(f)
             return config
                      
