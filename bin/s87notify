@@ -78,7 +78,7 @@ def sendMail(config, subject, message, **keyWordArgs):
         attachPart = ' -a ' + a
     except KeyError:
         attachPart = ''
-    out = os.popen('sendEmail -f "' + config['smtpUser'] + '" -s ' + config['mailServer'] + ':' + str(config['smtpPort']) + ' -xu "' + config['user'] + '" -xp "' + basic.decrypt(basic.getHostKey(), config['password']) + '" -t "' + config['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
+    out = os.popen('sendEmail -f "' + config['smtpUser'] + '" -s ' + config['mailServer'] + ':' + str(config['smtpPort']) + ' -xu "' + config['smtpUser'] + '" -xp "' + basic.decrypt(basic.getHostKey(), config['password']) + '" -t "' + config['sendTo'] + '" -o tls=yes -u ' + '"' + subject + '" -m "' + message + '"'+ attachPart).read()
     if 'ERROR' in out: 
         return False
     return True
