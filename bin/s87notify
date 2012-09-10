@@ -94,11 +94,9 @@ except IndexError:
 tempWarningSended = 0
 tempAlertSended = 0
 loadWarning = 0
-counter = 0
 
 hddInfo = getHDDInfo()
 counterHDD = {}
-
 for hdd in hddInfo:
     counterHDD[hdd] = 0
 
@@ -164,12 +162,6 @@ try:
 
         mailServer.send()
         time.sleep(2)
-        counter += 1
-        if counter > 1:
-            counter = 0
-            config = renewConfig('/opt/s87/config/s87notify.conf')
-            for hdd in hddInfo:
-                counterHDD[hdd] = 0
             
 except KeyboardInterrupt:
     print 'exit'
