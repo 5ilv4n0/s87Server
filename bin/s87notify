@@ -28,11 +28,89 @@ import system
 import basic
 import mail
 
+class NormalToHigh_Event(object):
+    def __init__(self, valueName, getValueMethod, normal, max, againTime, mailMethod, config, mailServer, kind, *eventMethodsToRun):
+        self.config = config
+        self.mailServer = mailServer
+        self.sendMail = mailMethod
+        self.valueName = valueName
+        self.getValue = getValueMethod
+        self.maxValue = max
+        self.normalValue = normal
+        self.eventInAction = False
+        self.eventInActionStartTime = False
+        self.againTime = againTime
+        self.eventMethods = eventMethodsToRun
+        self.valueKind = kind
+
+    def run(self):
+        value = self.getValue()
+        if not self.eventInAction:
+            if value >= self.maxValue:
+                subject = basic.HOSTNAME + ': ' + self.valueName + 'high!'
+                #subject = 'SERVER' + ': ' + self.valueName + ' high!'
+                message = self.valueName + ': ' + str(value) + self.valueKind
+                self.sendMail(config, mailServer, subject, message)
+                for method in self.eventMethods:
+                    method() 
+                self.eventInAction = True
+                self.eventInActionStartTime = self.getTime()
+        else:
+            if value <= self.normalValue:
+                subject = basic.HOSTNAME + ': ' + self.valueName + 'normal.'
+                #subject = 'SERVER' + ': ' + self.valueName + ' normal.'
+                message = self.valueName + ': ' + str(value) + self.valueKind
+                self.sendMail(config, mailServer, subject, message)               
+                self.eventInAction = False
+            if self.getTime()-self.eventInActionStartTime >= self.againTime:
+                self.eventInAction = False
+        
+    def getTime(self):
+        return time.mktime(time.localtime())
+        
+class High_Event(object):
+    def __init__(self, valueName, getValueMethod, high, againTime, mailMethod, config, mailServer, kind, *eventMethodsToRun):
+        self.config = config
+        self.mailServer = mailServer
+        self.sendMail = mailMethod
+        self.valueName = valueName
+        self.getValue = getValueMethod
+        self.highValue = high
+        self.eventInAction = False
+        self.eventInActionStartTime = False
+        self.againTime = againTime
+        self.eventMethods = eventMethodsToRun
+        self.valueKind = kind
+
+    def run(self):
+        value = self.getValue()
+        if not self.eventInAction:
+            if value >= self.maxValue:
+                subject = basic.HOSTNAME + ': ' + self.valueName + 'high!'
+                #subject = 'SERVER' + ': ' + self.valueName + ' WARNING!'
+                message = self.valueName + ': ' + str(value) + self.valueKind
+                self.sendMail(config, mailServer, subject, message)
+                for method in self.eventMethods:
+                    method() 
+                self.eventInAction = True
+                self.eventInActionStartTime = self.getTime()
+        else:
+            if self.getTime()-self.eventInActionStartTime >= self.againTime:
+                self.eventInAction = False
+        
+    def getTime(self):
+        return time.mktime(time.localtime())
+
+
+
+
+
+
 
 def renewConfig(filePath):
     config = basic.configReader.readConfig(filePath)
     if os.path.isfile('/opt/s87/DEBUG'):
-        config['logLevel'] = 99    
+        config['logLevel'] = 9    
     return config
 
 PROCESSNAME = os.path.split(sys.argv[0])[1]
@@ -44,13 +122,12 @@ mailServer = mail.MailQueue(config['smtpConfig']['mailServer'], config['smtpConf
 
 if os.path.isfile('/opt/s87/DEBUG'):
     config['logLevel'] = 99
+    
 logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
-
-
 
 def email(config, mailServer, subject, message):
     mailServer.addMail(config['smtpConfig']['smtpUser'], config['smtpConfig']['smtpUser'], subject, message)
-
+    logging.info('send mail: '+ subject)
 
 def getCPUCurrentCriticalTemp():
     cpuTemp = os.popen('sensors').read()
@@ -58,8 +135,7 @@ def getCPUCurrentCriticalTemp():
     current, critical = re.match(r'temp1:.+\+(\d+\.\d).+\(crit.+\+(\d+\.\d).+',temp).groups()
     current = float(current)
     critical = float(critical)
-    return current, critical
-
+    return current#, critical
 
 def getHDDInfo():
     content = os.popen('df -h | grep /dev/').read()
@@ -70,12 +146,6 @@ def getHDDInfo():
             if lEntry[5] in config['mountPoints']:
                 outLines.append(str(lEntry[5].ljust(40,' ') + ' ' + lEntry[4].rjust(4,' ') + ' ' + '[' + lEntry[3] + ' free]'))
     return outLines
-
-
-
-
-
-
 
 try:
     if sys.argv[1] == '--dailyHDD':
@@ -89,6 +159,11 @@ except IndexError:
     pass
 
 
+
+
+
+events = []
+events.append( NormalToHigh_Event('CPU-Temperature', getCPUCurrentCriticalTemp, 45.0, 70.0, 60, email, config, mailServer, '°C') )
 
 
 tempWarningSended = 0
@@ -139,6 +214,8 @@ try:
                     counterHDD[hdd] = 0
 
 
+
+
         cpuLoads = system.getCPULoad()
         if float(cpuLoads[0]) > 0.99:
             if loadWarning == 0:
@@ -159,6 +236,8 @@ try:
 
 
 
+        for event in events:
+            event.run()
 
         mailServer.send()
         time.sleep(2)
