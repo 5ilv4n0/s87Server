@@ -130,8 +130,27 @@ class Low_Event(object):
     def getTime(self):
         return time.mktime(time.localtime())
 
+class FileChange_Event(object)
+    def __init__(self, filePath, mailMethod, config, mailServer, *eventMethodsToRun):
+        self.config = config
+        self.mailServer = mailServer
+        self.sendMail = mailMethod
+        self.filePath = filePath
+        self.md5 = None
+        self.oldmd5 = None
+        self.eventMethods = eventMethodsToRun
 
-
+    def run(self):
+        self.oldmd5 = self.md5
+        self.md5 = os.popen('md5sum ' + self.filePath).read()[:32]
+        if not self.md5 == self.oldmd5:
+            subject = basic.HOSTNAME + ': File changed: ' + self.filePath
+            message = 'changed from:\n '+str(self.oldmd5)+'\nto:\n '+ self.md5
+            self.sendMail(config, mailServer, subject, message)
+        
+        
+    def getTime(self):
+        return time.mktime(time.localtime())
 
 
 
