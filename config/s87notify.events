@@ -22,7 +22,17 @@
         "notifyInterval": 3600
     },
     {
+        "eventType": "HDDFreeSpaceLow_Event",
+        "mountPoint" : "/mnt/600GB",
+        "minimalMB": 1024,
+        "notifyInterval": 3600
+    },
+    {
         "eventType": "FileChange_Event",
         "path" : "/etc/shorewall"
+    },
+    {
+        "eventType": "FileChange_Event",
+        "path" : "/etc/crontab"
     }
 ]

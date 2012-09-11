@@ -54,6 +54,7 @@ class NormalToHigh_Event(object):
 
     def run(self):
         values = self.getValue(self.valueName)
+        print values
         if not self.eventInAction:
             for value in values:
                 if value >= self.highValue:
@@ -133,6 +134,7 @@ class Low_Event(object):
 class FileChange_Event(object):
     def __init__(self, eventConfig, mailMethod):
         self.sendMail = mailMethod
+        self.ignore = ('.swp',)
         self.path = eventConfig['path']
         if os.path.isfile(self.path):
             self.md5 = None
@@ -153,15 +155,16 @@ class FileChange_Event(object):
             self.oldmd5 = self.md5.copy()
             for entry in os.listdir(self.path):
                 path = os.path.join(self.path, entry)
-                if os.path.isfile(path):
-                    self.md5[path] = os.popen('md5sum ' + path).read()[:32]
-                    try:
-                        if not self.md5[path] == self.oldmd5[path]:
-                            subject = basic.HOSTNAME + ': File changed: ' + path
-                            message = 'changed from:\n '+str(self.oldmd5[path])+'\nto:\n '+ self.md5[path]
-                            self.sendMail(subject, message)                            
-                    except KeyError:
-                        pass
+                if not path[-4:] in self.ignore:
+                    if os.path.isfile(path):
+                        self.md5[path] = os.popen('md5sum ' + path).read()[:32]
+                        try:
+                            if not self.md5[path] == self.oldmd5[path]:
+                                subject = basic.HOSTNAME + ': File changed: ' + path
+                                message = 'changed from:\n '+str(self.oldmd5[path])+'\nto:\n '+ self.md5[path]
+                                self.sendMail(subject, message)                            
+                        except KeyError:
+                            pass
 
 class HDDFreeSpaceLow_Event(object):
     def __init__(self, eventConfig, mailMethod):
