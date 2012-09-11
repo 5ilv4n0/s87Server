@@ -150,7 +150,13 @@ def loadEvents(PROCESSNAME, eventsFile, local, email):
     ReturnEvents = []
     for event in events:
         eventType = event['eventType']
-        logging.debug(PROCESSNAME + ' loading event: '+ eventType + ':' + event['value'])
+
+        if eventType == 'FileChange_Event': value = 'path'
+        elif eventType == 'HDDFreeSpaceLow_Event': value = 'mountPoint'
+        else: value = 'value'
+
+
+        logging.debug(PROCESSNAME + ' loading event: '+ eventType + ':' + event[value])
         try:
             ReturnEvents.append(local[eventType](event, email)) 
         except:
