@@ -98,6 +98,39 @@ class High_Event(object):
     def getTime(self):
         return time.mktime(time.localtime())
 
+class Low_Event(object):
+    def __init__(self, valueName, getValueMethod, low, againTime, mailMethod, config, mailServer, kind, *eventMethodsToRun):
+        self.config = config
+        self.mailServer = mailServer
+        self.sendMail = mailMethod
+        self.valueName = valueName
+        self.getValue = getValueMethod
+        self.lowValue = low
+        self.eventInAction = False
+        self.eventInActionStartTime = False
+        self.againTime = againTime
+        self.eventMethods = eventMethodsToRun
+        self.valueKind = kind
+
+    def run(self):
+        value = self.getValue()
+        if not self.eventInAction:
+            if value <= self.maxValue:
+                subject = basic.HOSTNAME + ': ' + self.valueName + ' WARNING!'
+                message = self.valueName + ': ' + str(value) + self.valueKind
+                self.sendMail(config, mailServer, subject, message)
+                for method in self.eventMethods:
+                    method() 
+                self.eventInAction = True
+                self.eventInActionStartTime = self.getTime()
+        else:
+            if self.getTime()-self.eventInActionStartTime >= self.againTime:
+                self.eventInAction = False
+        
+    def getTime(self):
+        return time.mktime(time.localtime())
+
+
 
 
 
