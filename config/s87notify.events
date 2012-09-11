@@ -1,0 +1,27 @@
+[
+    {
+        "eventType": "NormalToHigh_Event",
+        "value": "SYSTEMTEMPERATURES",
+        "normalValue": 40.0,
+        "highValue": 60.0,
+        "notifyInterval": 60,
+        "unit": "C"
+    },
+    {
+        "eventType": "NormalToHigh_Event",
+        "value": "CPULOAD",
+        "normalValue": 0.66,
+        "highValue": 1.00,
+        "notifyInterval": 60,
+        "unit": ""
+    },
+    {
+        "eventType": "HDDFreeSpaceLow_Event",
+        "mountPoint" : "/home/silvano",
+        "notifyInterval": 3600
+    },
+    {
+        "eventType": "FileChange_Event",
+        "path" : "/etc/crontab"
+    }
+]

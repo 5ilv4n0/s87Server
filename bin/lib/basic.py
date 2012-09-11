@@ -24,7 +24,7 @@
 import os, subprocess, re, json
 HOSTNAME = os.popen('cat /etc/hostname').read().replace(os.linesep,'') 
 CRYPTPATH = '/opt/s87/bin/lib/crypt'
-#CRYPTPATH = '/opt/repository/s87Server/bin/lib/crypt'
+
 
 
 def isJsonFile(filePath):
@@ -94,6 +94,8 @@ class ConfigReader(object):
         if isJsonFile(filePath):
             with open(filePath,'r') as f:
                 config = json.load(f)
+                if os.path.isfile('/opt/s87/DEBUG'):
+                    config['logLevel'] = 9
             return config
                      
 configReader = ConfigReader()

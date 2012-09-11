@@ -23,10 +23,15 @@
 # 
 import os, sys, json, time, re
 sys.path.append('/opt/s87/bin/lib')
+sys.path.append('/opt/s87/config')
+from s87notifymethods import *
 import log
 import system
 import basic
 import mail
+
+
+
 
 class NormalToHigh_Event(object):
     def __init__(self, valueName, getValueMethod, normal, max, againTime, mailMethod, config, mailServer, kind, *eventMethodsToRun):
@@ -44,22 +49,26 @@ class NormalToHigh_Event(object):
         self.valueKind = kind
 
     def run(self):
-        value = self.getValue()
+        values = self.getValue(self.valueName)
         if not self.eventInAction:
-            if value >= self.maxValue:
-                subject = basic.HOSTNAME + ': ' + self.valueName + ' high!'
-                message = self.valueName + ': ' + str(value) + self.valueKind
-                self.sendMail(config, mailServer, subject, message)
-                for method in self.eventMethods:
-                    method() 
-                self.eventInAction = True
-                self.eventInActionStartTime = self.getTime()
+			
+            for value in values:
+                if value >= self.maxValue:
+                    subject = basic.HOSTNAME + ': ' + self.valueName + ' high!'
+                    message = self.valueName + ': ' + str(value) + self.valueKind
+                    self.sendMail(config, mailServer, subject, message)
+                    for method in self.eventMethods:
+                        method() 
+                    self.eventInAction = True
+                    self.eventInActionStartTime = self.getTime()
         else:
-            if value <= self.normalValue:
-                subject = basic.HOSTNAME + ': ' + self.valueName + ' normal.'
-                message = self.valueName + ': ' + str(value) + self.valueKind
-                self.sendMail(config, mailServer, subject, message)               
-                self.eventInAction = False
+            for value in values:
+                if value <= self.normalValue:
+                    subject = basic.HOSTNAME + ': ' + self.valueName + ' normal.'
+                    message = self.valueName + ': ' + str(value) + self.valueKind
+                    self.sendMail(config, mailServer, subject, message)               
+                    self.eventInAction = False
+
             if self.getTime()-self.eventInActionStartTime >= self.againTime:
                 self.eventInAction = False
         
@@ -130,77 +139,143 @@ class Low_Event(object):
     def getTime(self):
         return time.mktime(time.localtime())
 
-class FileChange_Event(object)
-    def __init__(self, filePath, mailMethod, config, mailServer, *eventMethodsToRun):
+class FileChange_Event(object):
+    def __init__(self, path, mailMethod, config, mailServer, *eventMethodsToRun):
         self.config = config
         self.mailServer = mailServer
         self.sendMail = mailMethod
-        self.filePath = filePath
-        self.md5 = None
-        self.oldmd5 = None
+        self.path = path
+        if os.path.isfile(path):
+            self.md5 = None
+            self.oldmd5 = None
+        elif os.path.isdir(path):
+            self.md5 = {}
+            self.oldmd5 = {}            
         self.eventMethods = eventMethodsToRun
 
     def run(self):
-        self.oldmd5 = self.md5
-        self.md5 = os.popen('md5sum ' + self.filePath).read()[:32]
-        if not self.md5 == self.oldmd5:
-            subject = basic.HOSTNAME + ': File changed: ' + self.filePath
-            message = 'changed from:\n '+str(self.oldmd5)+'\nto:\n '+ self.md5
-            self.sendMail(config, mailServer, subject, message)
-        
-        
+        if os.path.isfile(self.path):
+            self.oldmd5 = self.md5
+            self.md5 = os.popen('md5sum ' + self.path).read()[:32]
+            if not self.md5 == self.oldmd5:
+                subject = basic.HOSTNAME + ': File changed: ' + self.path
+                message = 'changed from:\n '+str(self.oldmd5)+'\nto:\n '+ self.md5
+                self.sendMail(config, mailServer, subject, message)
+                
+                
+        elif os.path.isdir(self.path):
+            self.oldmd5 = self.md5.copy()
+
+            for entry in os.listdir(self.path):
+                path = os.path.join(self.path, entry)
+                
+                if os.path.isfile(path):
+                    self.md5[path] = os.popen('md5sum ' + path).read()[:32]
+                    try:
+                        if not self.md5[path] == self.oldmd5[path]:
+                            subject = basic.HOSTNAME + ': File changed: ' + path
+                            message = 'changed from:\n '+str(self.oldmd5[path])+'\nto:\n '+ self.md5[path]
+                            self.sendMail(config, mailServer, subject, message)                            
+                    except KeyError:
+                        pass
+                time.sleep(0.025)
+
+class HDDFreeSpaceLow_Event(object):
+    def __init__(self, mointPoint, MBLowValue, againTime, mailMethod, config, mailServer, *eventMethodsToRun):
+        self.config = config
+        self.mailServer = mailServer
+        self.sendMail = mailMethod
+        self.mointPoint = mointPoint
+        self.againTime = againTime
+        self.MBLowValue = MBLowValue
+        self.eventMethods = eventMethodsToRun
+        self.eventInAction = False
+        self.eventInActionStartTime = False
+
+    def run(self):
+        mointPointInfos = VALUEGETTER.get('HDDFREESPACE')
+        try:
+            if not self.eventInAction:
+                if mointPointInfos[self.mointPoint]['free'] <= self.MBLowValue:
+                    subject = basic.HOSTNAME + ': HDD low free space: ' + self.mointPoint
+                    message = self.mointPoint + ':\n' + json.dumps(mointPointInfos[self.mointPoint], indent=4)
+                    print subject
+                    print message
+                    self.sendMail(config, mailServer, subject, message)
+                    self.eventInAction = True
+                    self.eventInActionStartTime = self.getTime()
+            else:
+                if self.getTime()-self.eventInActionStartTime >= self.againTime:
+                    self.eventInAction = False               
+        except KeyError:
+            return False
+
+
+
     def getTime(self):
         return time.mktime(time.localtime())
 
 
+class GetValue(object):
+    def __init__(self):
+        pass
+        
+    def get(self, valueName):
+        return getattr(self, valueName)()
 
-
-
-def renewConfig(filePath):
-    config = basic.configReader.readConfig(filePath)
-    if os.path.isfile('/opt/s87/DEBUG'):
-        config['logLevel'] = 9    
-    return config
-
-PROCESSNAME = os.path.split(sys.argv[0])[1]
-hostName = basic.HOSTNAME
-config = renewConfig('/opt/s87/config/s87notify.conf')
-#config = basic.configReader.readConfig('/opt/s87/config/s87notify.conf')
-
-mailServer = mail.MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
-
-if os.path.isfile('/opt/s87/DEBUG'):
-    config['logLevel'] = 99
+    def CPULOAD(self):
+        uptime = os.popen('uptime').read()
+        reFloat = re.compile(r'\d\.\d\d')
+        loadAvg = reFloat.findall(uptime)       
+        return (float(loadAvg[0]),)
     
-logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
+    def SYSTEMTEMPERATURES(Self):
+        sensors = os.popen('sensors').read()
+        reFloat = re.compile(r'\d\d\.\d°C ')
+        temps = reFloat.findall(sensors)
+        outTemps = []
+        for temp in temps:
+            outTemps.append(float(temp.replace('°C ','')))
+        return outTemps
+    
+    def HDDFREESPACE(self):
+        df = os.popen('df -B M').readlines()
+        df = df[1:]
+        mountPoints = {}
+        for mount in df:
+            mountPoint = {}
+            mount = mount.replace(os.linesep,'').split()
+            mountPoint['device'] = mount[0]
+            mountPoint['capacity'] = int(mount[1].replace('M',''))
+            mountPoint['used'] = int(mount[2].replace('M',''))
+            mountPoint['used%'] = int(mount[4].replace('%',''))
+            mountPoint['free'] = int(mount[3].replace('M',''))
+            mountPoints[mount[5]] = mountPoint
+        return mountPoints
+
+
+
+
+
+
+
+
+
+
+
+VALUEGETTER	= GetValue()
+PROCESSNAME	= os.path.split(sys.argv[0])[1]
+config		= basic.configReader.readConfig('/opt/s87/config/s87notify.conf')
+mailServer	= mail.MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
+logging		= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
 
 def email(config, mailServer, subject, message):
     mailServer.addMail(config['smtpConfig']['smtpUser'], config['smtpConfig']['smtpUser'], subject, message)
     logging.info('send mail: '+ subject)
 
-def getCPUCurrentCriticalTemp():
-    cpuTemp = os.popen('sensors').read()
-    temp = cpuTemp.split(os.linesep)[2]
-    current, critical = re.match(r'temp1:.+\+(\d+\.\d).+\(crit.+\+(\d+\.\d).+',temp).groups()
-    current = float(current)
-    critical = float(critical)
-    return current#, critical
 
-def getCPULoad():
-    uptime = os.popen('uptime').read()
-    reFloat = re.compile(r'\d\.\d\d')
-    loadAvg = reFloat.findall(uptime)
-    return float(loadAvg[0])
 
-def getHDDInfo():
-    content = os.popen('df -h | grep /dev/').read()
-    outLines = []
-    for entry in content.split(os.linesep):
-        if not entry == '':
-            lEntry = entry.split()
-            if lEntry[5] in config['mountPoints']:
-                outLines.append(str(lEntry[5].ljust(40,' ') + ' ' + lEntry[4].rjust(4,' ') + ' ' + '[' + lEntry[3] + ' free]'))
-    return outLines
+
 
 try:
     if sys.argv[1] == '--dailyHDD':
@@ -218,86 +293,19 @@ except IndexError:
 
 
 events = []
-events.append( NormalToHigh_Event('CPU-Temperature', getCPUCurrentCriticalTemp, 40.0, 60.0, 60, email, config, mailServer, ' C') )
-events.append( NormalToHigh_Event('CPU-Load', getCPULoad, 0.66, 1.00, 300, email, config, mailServer, '') )
-
-
-tempWarningSended = 0
-tempAlertSended = 0
-loadWarning = 0
-#~ 
-#~ hddInfo = getHDDInfo()
-#~ counterHDD = {}
-#~ for hdd in hddInfo:
-    #~ counterHDD[hdd] = 0
-
+events.append( NormalToHigh_Event('SYSTEMTEMPERATURES', VALUEGETTER.get, 40.0, 60.0, 60, email, config, mailServer, ' C') )
+events.append( NormalToHigh_Event('CPULOAD', VALUEGETTER.get, 0.66, 1.00, 300, email, config, mailServer, '') )
+events.append( FileChange_Event('/etc/shorewall', email, config, mailServer) )
+events.append( HDDFreeSpaceLow_Event('/mnt/2000GB', 1024, 3600, email, config, mailServer) )
 
 logging.info(PROCESSNAME + ' started.')
 try:
     while True:
-
-#~ 
-        #~ currentCPUTemp, criticalCPUTemp = getCPUCurrentCriticalTemp()
-        #~ if currentCPUTemp > criticalCPUTemp - 10:
-            #~ if tempAlertSended == 0:
-                #~ content = 'CPU Temperature very high! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C'
-                #~ email(config, mailServer, hostName + ': CPU Temperature ALERT!', content)
-                #~ tempAlertSended = 1
-        #~ if currentCPUTemp > criticalCPUTemp - 20:
-            #~ if tempWarningSended == 0 and tempAlertSended == 0:
-                #~ content = 'CPU Temperature is rising! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C' 
-                #~ email(config, mailServer, hostName + ': CPU Temperature WARNING!', content)
-                #~ tempWarningSended = 1
-        #~ if tempAlertSended == 1 or tempWarningSended == 1:
-            #~ if currentCPUTemp < criticalCPUTemp - 30:
-                #~ tempAlertSended = 0
-                #~ tempWarningSended = 0
-                #~ content = 'CPU Temperature OK again! \n\nCurrent:   '+ str(currentCPUTemp)+'C\nCritical:   '+str(criticalCPUTemp)+'C' 
-                #~ email(config, mailServer, hostName + ': CPU Temperature OK!', content)
-
-
-#~ 
-        #~ hddInfo = getHDDInfo()
-        #~ for hdd in hddInfo:
-            #~ r = re.match(r'.+[ ]+(\d+)%.+', hdd)
-            #~ if not r == None:
-                #~ percentInUse = int(r.groups()[0])
-                #~ if percentInUse > config['usedSpaceWarning']-1:
-                    #~ if counterHDD[hdd] == 0:
-                        #~ content = str(hdd).replace(' ','.')
-                        #~ email(config, mailServer, hostName + ': HDD capacity WARNING!', content)
-                #~ else:
-                    #~ counterHDD[hdd] = 0
-
-
-#~ 
-#~ 
-        #~ cpuLoads = system.getCPULoad()
-        #~ if float(cpuLoads[0]) > 0.99:
-            #~ if loadWarning == 0:
-                #~ content = 'CPU load is high.\n\n' + json.dumps(cpuLoads)
-                #~ email(config, mailServer, hostName + ': CPU load high!', content)
-                #~ loadWarning = 1
-        #~ if float(cpuLoads[0]) < 0.67:
-            #~ loadWarning = 0
-
-
-
-	#~ 
-        #~ 
-        #~ for hdd in hddInfo:
-            #~ counterHDD[hdd] += 1
-            #~ if counterHDD[hdd] > 1800:
-                #~ counterHDD[hdd] = 0
-
-
-
         for event in events:
             event.run()
-
         mailServer.send()
         time.sleep(2)
             
 except KeyboardInterrupt:
-    print 'exit'
+    logging.info(PROCESSNAME + ' stopped by user.')
     sys.exit()
