@@ -207,8 +207,6 @@ except IndexError:
 
 
 events = basic.loadEvents(PROCESSNAME, '/opt/s87/config/s87notify.events',locals(), email)
-print events
-sys.exit()
 
 logging.info(PROCESSNAME + ' is running.')
 try:
