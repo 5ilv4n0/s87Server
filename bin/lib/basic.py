@@ -150,7 +150,7 @@ def loadEvents(PROCESSNAME, eventsFile, local, email):
     ReturnEvents = []
     for event in events:
         eventType = event['eventType']
-        logging.debug(PROCESSNAME + ' loading event: '+ eventType)
+        logging.debug(PROCESSNAME + ' loading event: '+ eventType + ':' + event['value'])
         try:
             ReturnEvents.append(local[eventType](event, email)) 
         except:
