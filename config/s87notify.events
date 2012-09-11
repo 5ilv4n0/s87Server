@@ -2,7 +2,7 @@
     {
         "eventType": "NormalToHigh_Event",
         "value": "SYSTEMTEMPERATURES",
-        "normalValue": 40.0,
+        "normalValue": 45.0,
         "highValue": 60.0,
         "notifyInterval": 60,
         "unit": "C"
@@ -17,11 +17,12 @@
     },
     {
         "eventType": "HDDFreeSpaceLow_Event",
-        "mountPoint" : "/home/silvano",
+        "mountPoint" : "/mnt/2000GB",
+        "minimalMB": 1024,
         "notifyInterval": 3600
     },
     {
         "eventType": "FileChange_Event",
-        "path" : "/etc/crontab"
+        "path" : "/etc/shorewall"
     }
 ]

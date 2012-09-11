@@ -21,7 +21,10 @@
 #  MA 02110-1301, USA.
 #  
 # 
-import os, subprocess, re, json
+import os, sys, subprocess, re, json
+sys.path.append('/opt/s87/bin/lib')
+sys.path.append('/opt/s87/config')
+import log
 HOSTNAME = os.popen('cat /etc/hostname').read().replace(os.linesep,'') 
 CRYPTPATH = '/opt/s87/bin/lib/crypt'
 
@@ -94,8 +97,62 @@ class ConfigReader(object):
         if isJsonFile(filePath):
             with open(filePath,'r') as f:
                 config = json.load(f)
-                if os.path.isfile('/opt/s87/DEBUG'):
-                    config['logLevel'] = 9
+                if not 'list' in str(type(config)):
+                    if os.path.isfile('/opt/s87/DEBUG'):
+                        config['logLevel'] = 9
             return config
-                     
 configReader = ConfigReader()
+
+
+class GetValue(object):
+    def __init__(self):
+        pass
+        
+    def get(self, valueName):
+        return getattr(self, valueName)()
+
+    def CPULOAD(self):
+        uptime = os.popen('uptime').read()
+        reFloat = re.compile(r'\d\.\d\d')
+        loadAvg = reFloat.findall(uptime)       
+        return (float(loadAvg[0]),)
+    
+    def SYSTEMTEMPERATURES(Self):
+        sensors = os.popen('sensors').read()
+        reFloat = re.compile(r'\d\d\.\d°C ')
+        temps = reFloat.findall(sensors)
+        outTemps = []
+        for temp in temps:
+            outTemps.append(float(temp.replace('°C ','')))
+        return outTemps
+    
+    def HDDFREESPACE(self):
+        df = os.popen('df -B M').readlines()
+        df = df[1:]
+        mountPoints = {}
+        for mount in df:
+            mountPoint = {}
+            mount = mount.replace(os.linesep,'').split()
+            mountPoint['device'] = mount[0]
+            mountPoint['capacity'] = int(mount[1].replace('M',''))
+            mountPoint['used'] = int(mount[2].replace('M',''))
+            mountPoint['used%'] = int(mount[4].replace('%',''))
+            mountPoint['free'] = int(mount[3].replace('M',''))
+            mountPoints[mount[5]] = mountPoint
+        return mountPoints
+valueGetter = GetValue()
+
+
+def loadEvents(PROCESSNAME, eventsFile, local, email):
+    config = configReader.readConfig('/opt/s87/config/s87notify.conf')
+    logging	= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
+    events = configReader.readConfig(eventsFile)
+    ReturnEvents = []
+    for event in events:
+        eventType = event['eventType']
+        logging.debug(PROCESSNAME + ' loading event: '+ eventType)
+        try:
+            ReturnEvents.append(local[eventType](event, email)) 
+        except:
+            pass
+    return ReturnEvents

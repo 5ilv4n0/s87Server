@@ -170,8 +170,12 @@ class MailQueue(object):
                 
         return
                 
-            
+
+config = basic.configReader.readConfig('/opt/s87/config/s87notify.conf')            
+mailServer= MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
         
+
+
   
 #c = EmailClient('mail.silvano87.de','server@silvano87.de','ABCabc123456')
 #c.login()

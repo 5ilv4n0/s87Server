@@ -66,3 +66,4 @@ class LogFile(object):
         dateTimeStamp = time.strftime("%d.%m.%Y %H:%M:%S", time.localtime())
         return dateTimeStamp
 
+
