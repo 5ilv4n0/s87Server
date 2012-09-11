@@ -3,7 +3,7 @@
         "eventType": "NormalToHigh_Event",
         "value": "SYSTEMTEMPERATURES",
         "normalValue": 45.0,
-        "highValue": 60.0,
+        "highValue": 65.0,
         "notifyInterval": 60,
         "unit": "C"
     },

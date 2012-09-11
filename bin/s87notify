@@ -55,7 +55,6 @@ class NormalToHigh_Event(object):
     def run(self):
         values = self.getValue(self.valueName)
         if not self.eventInAction:
-			
             for value in values:
                 if value >= self.highValue:
                     subject = basic.HOSTNAME + ': ' + self.valueName + ' high!'
@@ -196,10 +195,12 @@ class HDDFreeSpaceLow_Event(object):
 
 try:
     if sys.argv[1] == '--dailyHDD':
-        outLines = getHDDInfo()
+        outLines = os.popen('df -B M').readlines()
+        outLines = outLines[1:]
+        outLines = os.linesep.join(outLines)
         content = 'Current HDD values:\n\n'
-        content +=  os.linesep.join(outLines) 
-        email(hostName + ': Daily HDD info', content.replace(' ','.'))
+        content +=  outLines 
+        email(basic.HOSTNAME + ': Daily HDD info', content.replace(' ','.'))
         mail.mailServer.send()
         sys.exit()
 except IndexError:
