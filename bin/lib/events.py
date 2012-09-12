@@ -228,12 +228,17 @@ class DailyTime_Event(object):
         self.sendMail = mailMethod
         self.valueName = eventConfig['value']
         self.time = eventConfig['time']
+        self.mailSended = False
         
     def run(self):
         if time.strftime('%H:%M') == self.time:
-            values = self.getValue(self.valueName)
-            subject = basic.HOSTNAME + ': ' + self.valueName + ' info.'
-            message = 'HDD Memory Info:\n\n'
-            for mountPoint in values.keys():
-                message += mountPoint + ':\n '+'capacity:'.ljust(20,'.') + str(values[mountPoint]['capacity']).rjust(12,'.')+ ' MB\n ' + 'free:'.ljust(20,'.')+ str(values[mountPoint]['free']).rjust(12,'.')+ ' MB\n ' + 'in use:'.ljust(20,'.')+ str(values[mountPoint]['used%']).rjust(12,'.') + ' %\n\n'
-            self.sendMail(subject, message) 
+            if not self.mailSended:
+                values = self.getValue(self.valueName)
+                subject = basic.HOSTNAME + ': ' + self.valueName + ' info.'
+                message = 'HDD Memory Info:\n\n'
+                for mountPoint in values.keys():
+                    message += mountPoint + ':\n '+'capacity:'.ljust(20,'.') + str(values[mountPoint]['capacity']).rjust(12,'.')+ ' MB\n ' + 'free:'.ljust(20,'.')+ str(values[mountPoint]['free']).rjust(12,'.')+ ' MB\n ' + 'in use:'.ljust(20,'.')+ str(values[mountPoint]['used%']).rjust(12,'.') + ' %\n\n'
+                self.sendMail(subject, message)
+                self.mailSended = True
+        else:
+            self.mailSended = False
