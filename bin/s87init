@@ -67,6 +67,7 @@ try:
             if not system.existsPPPDevice():
                 logging.info(PROCESSNAME + ' reconnecting to internet...')
                 system.connect()
+                time.sleep(2)
         
         psax = system.getRunningProcesses()
         for process in config['initProcesses'].keys():
