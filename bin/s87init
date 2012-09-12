@@ -52,7 +52,7 @@ for disc in fstab:
             if disc[0].replace('UUID=','') in uuid:
                 device = '/dev/' + str(uuid.split('/')[-1])[:-1]
                 print 'set',device,'standby time to 30s.'
-                os.popen('hdparm -S '+ config['hddStandbyTime'] + ' ' + device)
+                os.popen('hdparm -S '+ str(config['hddStandbyTime']) + ' ' + device)
 
 
 
@@ -64,7 +64,7 @@ try:
     while True:
 
         if config['autoReconnect']:
-            if not existsPPPDevice():
+            if not system.existsPPPDevice():
                 logging.info(PROCESSNAME + ' reconnecting to internet...')
                 system.connect()
         
