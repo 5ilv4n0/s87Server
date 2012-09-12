@@ -54,7 +54,6 @@ class NormalToHigh_Event(object):
 
     def run(self):
         values = self.getValue(self.valueName)
-        print values
         if not self.eventInAction:
             for value in values:
                 if value >= self.highValue:

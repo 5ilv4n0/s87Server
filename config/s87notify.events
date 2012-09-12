@@ -30,9 +30,5 @@
     {
         "eventType": "FileChange_Event",
         "path" : "/etc/shorewall"
-    },
-    {
-        "eventType": "FileChange_Event",
-        "path" : "/etc/crontab"
     }
 ]

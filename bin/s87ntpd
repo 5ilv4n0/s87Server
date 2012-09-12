@@ -57,12 +57,12 @@ try:
             logging.info('try ntp server <' + server + '>')
             r = syncTime(server)
             if r == True:
-                logging.info('sync hwclock.')
+                logging.debug('sync hwclock.')
                 setHWClock()
-                logging.info('wait ' + str(config['updateInterval']) + ' sec...')
+                logging.debug('wait ' + str(config['updateInterval']) + ' sec...')
                 time.sleep(config['updateInterval'])
                 break
-        time.sleep(10)
+        time.sleep(30)
 except KeyboardInterrupt:
     print 'exit.'
 
