@@ -62,14 +62,15 @@ for disc in fstab:
 logging.info(PROCESSNAME + ' started.')
 try:
     while True:
+        psax = system.getRunningProcesses()
 
         if config['autoReconnect']:
             if not system.existsPPPDevice():
-                logging.info(PROCESSNAME + ' reconnecting to internet...')
-                system.connect()
-                time.sleep(2)
+                if not 's87reconnect' in psax: 
+                    logging.info(PROCESSNAME + ' reconnecting to internet...')
+                    system.connect()
+                    time.sleep(2)
         
-        psax = system.getRunningProcesses()
         for process in config['initProcesses'].keys():
             if config['initProcesses'][process]:
                 if not process in psax:
