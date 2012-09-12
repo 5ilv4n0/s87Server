@@ -26,8 +26,44 @@ sys.path.append('/opt/s87/bin/lib')
 import basic
 
 
-def getCPULoad():
-    uptime = os.popen('uptime').read()
-    reFloat = re.compile(r'\d\.\d\d')
-    loadAvg = reFloat.findall(uptime)
-    return loadAvg
+
+def getRunningProcesses():
+	return os.popen('ps ax').read()
+	processes = []
+	rp = os.popen('ps ax').readlines()
+	for line in rp:
+		r = re.match(r'.+\d:\d\d(.+)',line)
+		if not r == None:
+			processes.append(r.groups()[0])
+	return processes
+
+def existsPPPDevice():
+    ipr = os.popen('ip r').read()
+    if not 'ppp' in ipr:
+        return False
+    return True
+
+def disconnect():
+    if existsPPPDevice():
+        os.system('poff')
+
+def connect():
+    if not existsPPPDevice():
+        os.system('pon dsl-provider')
+
+def getExternIP():
+    iprDefault = os.popen('ip r').read()
+    for line in iprDefault.split(os.linesep):
+        r = re.match(r'default.+dev (.+)',line)
+        if not r == None:
+            iface = r.groups()[0].split()[0]
+            break
+    out = os.popen('ifconfig ' + iface).readlines()
+    for line in out:
+        if 'inet Adresse:' in line:
+        
+            r = re.match(r'.*inet Adresse:(\d+\.\d+\.\d+\.\d+).+', line)
+            if not r == None:
+                return r.groups()[0]
+            else:
+                return '127.0.0.1'

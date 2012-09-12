@@ -1,5 +1,10 @@
 [
     {
+        "eventType": "DailyTime_Event",
+        "value": "HDDFREESPACE",
+        "time": "12:00"
+    },
+    {
         "eventType": "NormalToHigh_Event",
         "value": "SYSTEMTEMPERATURES",
         "normalValue": 45.0,
@@ -29,6 +34,14 @@
     },
     {
         "eventType": "FileChange_Event",
-        "path" : "/etc/shorewall"
+        "path": "/etc/shorewall"
+    },
+    {
+        "eventType": "InternetOffline_Event",
+        "onlineCheckIPs": [
+            "8.8.8.8",
+            "8.8.4.4"
+            ],
+        "reactionTime": 10
     }
 ]

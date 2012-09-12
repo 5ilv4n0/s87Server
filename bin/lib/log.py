@@ -35,8 +35,9 @@ class LogFile(object):
         self.processName = processName
         if not basic.isDirWritable(self.filePath):
             self.filePath = os.path.join('/tmp', self.fileName)
+        self.logLevel = logLevel            
         self.buffer = open(self.filePath, 'a')
-        self.logLevel = logLevel
+
 
     def debug(self, message):
         if self.logLevel > 2:

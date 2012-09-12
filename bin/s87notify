@@ -24,6 +24,7 @@
 import os, sys, json, time, re
 sys.path.append('/opt/s87/bin/lib')
 sys.path.append('/opt/s87/config')
+from events import *
 import log
 import system
 import basic
@@ -40,166 +41,12 @@ def email(subject, message):
     logging.debug('send mail: '+ subject)
 
 
-class NormalToHigh_Event(object):
-    def __init__(self, eventConfig, mailMethod):
-        self.sendMail = mailMethod
-        self.getValue = basic.valueGetter.get
-        self.valueName = eventConfig['value']
-        self.unit = eventConfig['unit']
-        self.highValue = eventConfig['highValue']
-        self.normalValue = eventConfig['normalValue']
-        self.notifyInterval = eventConfig['notifyInterval'] 
-        self.eventInAction = False
-        self.eventInActionStartTime = False
-
-    def run(self):
-        values = self.getValue(self.valueName)
-        if not self.eventInAction:
-            for value in values:
-                if value >= self.highValue:
-                    subject = basic.HOSTNAME + ': ' + self.valueName + ' high!'
-                    message = self.valueName + ': ' + str(value) + self.unit
-                    self.sendMail(subject, message)
-                    self.eventInAction = True
-                    self.eventInActionStartTime = self.getTime()
-        else:
-            for value in values:
-                if value <= self.normalValue:
-                    subject = basic.HOSTNAME + ': ' + self.valueName + ' normal.'
-                    message = self.valueName + ': ' + str(value) + self.unit
-                    self.sendMail(subject, message)               
-                    self.eventInAction = False
-            if self.getTime()-self.eventInActionStartTime >= self.notifyInterval:
-                self.eventInAction = False
-
-    def getTime(self):
-        return time.mktime(time.localtime())
-
-class High_Event(object):
-    def __init__(self, eventConfig, mailMethod):
-        self.getValue = basic.valueGetter.get
-        self.sendMail = mailMethod
-        self.valueName = eventConfig['value']
-        self.unit = eventConfig['unit']
-        self.highValue = eventConfig['highValue']
-        self.notifyInterval = eventConfig['notifyInterval']
-        self.eventInAction = False
-        self.eventInActionStartTime = False
-
-    def run(self):
-        values = self.getValue(self.valueName)
-        if not self.eventInAction:
-            for value in values:
-                    subject = basic.HOSTNAME + ': ' + self.valueName + ' high!'
-                    message = self.valueName + ': ' + str(value) + self.unit
-                    self.sendMail(subject, message)
-                    self.eventInAction = True
-                    self.eventInActionStartTime = self.getTime()
-        else:
-            if self.getTime()-self.eventInActionStartTime >= self.againTime:
-                self.eventInAction = False
-        
-    def getTime(self):
-        return time.mktime(time.localtime())
-
-class Low_Event(object):
-    def __init__(self, eventConfig, mailMethod):
-        self.getValue = basic.valueGetter.get
-        self.sendMail = mailMethod
-        self.valueName = eventConfig['value']
-        self.unit = eventConfig['unit']
-        self.lowValue = eventConfig['lowValue']
-        self.notifyInterval = eventConfig['notifyInterval']
-        self.eventInAction = False
-        self.eventInActionStartTime = False
-
-    def run(self):
-        values = self.getValue(self.valueName)
-        if not self.eventInAction:
-            for value in values:
-                if value <= self.lowValue:
-                    subject = basic.HOSTNAME + ': ' + self.valueName + ' low!'
-                    message = self.valueName + ': ' + str(value) + self.unit
-                    self.sendMail(subject, message)
-                    self.eventInAction = True
-                    self.eventInActionStartTime = self.getTime()
-        else:
-            if self.getTime()-self.eventInActionStartTime >= self.againTime:
-                self.eventInAction = False
-        
-    def getTime(self):
-        return time.mktime(time.localtime())
-
-class FileChange_Event(object):
-    def __init__(self, eventConfig, mailMethod):
-        self.sendMail = mailMethod
-        self.ignore = ('.swp',)
-        self.path = eventConfig['path']
-        if os.path.isfile(self.path):
-            self.md5 = None
-            self.oldmd5 = None
-        elif os.path.isdir(self.path):
-            self.md5 = {}
-            self.oldmd5 = {}            
-
-    def run(self):
-        if os.path.isfile(self.path):
-            self.oldmd5 = self.md5
-            self.md5 = os.popen('md5sum ' + self.path).read()[:32]
-            if not self.md5 == self.oldmd5:
-                subject = basic.HOSTNAME + ': File changed: ' + self.path
-                message = 'changed from:\n '+str(self.oldmd5)+'\nto:\n '+ self.md5
-                self.sendMail(subject, message)
-        elif os.path.isdir(self.path):
-            self.oldmd5 = self.md5.copy()
-            for entry in os.listdir(self.path):
-                path = os.path.join(self.path, entry)
-                if not path[-4:] in self.ignore:
-                    if os.path.isfile(path):
-                        self.md5[path] = os.popen('md5sum ' + path).read()[:32]
-                        try:
-                            if not self.md5[path] == self.oldmd5[path]:
-                                subject = basic.HOSTNAME + ': File changed: ' + path
-                                message = 'changed from:\n '+str(self.oldmd5[path])+'\nto:\n '+ self.md5[path]
-                                self.sendMail(subject, message)                            
-                        except KeyError:
-                            pass
-
-class HDDFreeSpaceLow_Event(object):
-    def __init__(self, eventConfig, mailMethod):
-        self.getValue = basic.valueGetter.get
-        self.sendMail = mailMethod
-        self.mointPoint = eventConfig['mountPoint']
-        self.notifyInterval = eventConfig['notifyInterval']
-        self.minimalMB = eventConfig['minimalMB']
-        self.eventInAction = False
-        self.eventInActionStartTime = False
-
-    def run(self):
-        mointPointInfos = self.getValue('HDDFREESPACE')
-        try:
-            if not self.eventInAction:
-                if mointPointInfos[self.mointPoint]['free'] <= self.minimalMB:
-                    subject = basic.HOSTNAME + ': HDD low free space: ' + self.mointPoint
-                    message = self.mointPoint + ':\n' + json.dumps(mointPointInfos[self.mointPoint], indent=4)
-                    self.sendMail(subject, message)
-                    self.eventInAction = True
-                    self.eventInActionStartTime = self.getTime()
-            else:
-                if self.getTime()-self.eventInActionStartTime >= self.notifyInterval:
-                    self.eventInAction = False               
-        except KeyError:
-            return False
-
-    def getTime(self):
-        return time.mktime(time.localtime())
-
 
 try:
     if sys.argv[1] == '--dailyHDD':
         outLines = os.popen('df -B M').readlines()
         outLines = outLines[1:]
-        outLines = os.linesep.join(outLines)
+        outLines = ''.join(outLines)
         content = 'Current HDD values:\n\n'
         content +=  outLines 
         email(basic.HOSTNAME + ': Daily HDD info', content.replace(' ','.'))
