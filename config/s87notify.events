@@ -2,7 +2,7 @@
     {
         "eventType": "DailyTime_Event",
         "value": "HDDFREESPACE",
-        "time": "12:00"
+        "time": "19:02"
     },
     {
         "eventType": "NormalToHigh_Event",
