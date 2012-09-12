@@ -42,19 +42,6 @@ def email(subject, message):
 
 
 
-try:
-    if sys.argv[1] == '--dailyHDD':
-        outLines = os.popen('df -B M').readlines()
-        outLines = outLines[1:]
-        outLines = ''.join(outLines)
-        content = 'Current HDD values:\n\n'
-        content +=  outLines 
-        email(basic.HOSTNAME + ': Daily HDD info', content.replace(' ','.'))
-        mail.mailServer.send()
-        sys.exit()
-except IndexError:
-    pass
-
 
 events = basic.loadEvents(PROCESSNAME, '/opt/s87/config/s87notify.events',locals(), email)
 
