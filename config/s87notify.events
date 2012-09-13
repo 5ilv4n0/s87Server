@@ -46,9 +46,9 @@
     },
     {
         "eventType": "Customized_Event",
-        "command": "ifconfig",
+        "command": "ls -l",
         "interval": 60,
         "searchText": "eth0",
-        "eventByFound": true
+        "eventByFound": false
     }
 ]
