@@ -107,6 +107,15 @@ class ConfigReader(object):
 configReader = ConfigReader()
 s87config = configReader.readConfig('/opt/s87/config/s87.conf')
 
+
+def getConfigData(conf, key):
+    try:
+        a = conf[key]
+        return a
+    except KeyError:
+        return False
+
+
 class GetValue(object):
     def __init__(self):
         pass

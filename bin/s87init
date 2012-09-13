@@ -22,6 +22,11 @@
 #  
 #  
 import os, sys, json, re, time, subprocess
+
+s87initCount =  os.popen('ps ax | grep s87init | grep -v grep | grep -v less | wc -l').read()
+if int(s87initCount) > 1:
+    sys.exit()
+    
 sys.path.append('/opt/s87/bin/lib')
 sys.path.append('/opt/s87/config')
 import log
@@ -34,50 +39,96 @@ logging		= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logL
 logging.info(PROCESSNAME + ' start...')
 
 
-s87initCount =  os.popen('ps ax | grep s87init | grep -v grep | grep -v less | wc -l').read()
-if int(s87initCount) > 1:
-    sys.exit()
-
-
-
-os.system(config['firewallRestartCommand'])
-
-#SET DISKS IN FSTAB WITH UUID AND /MNT/ IN MOUNTPOINT TO 30SEC STANDBY TIME
-fstab = os.popen('cat /etc/fstab').read().split(os.linesep)
-translateUUID = os.popen('ls -l /dev/disk/by-uuid/').read().split(os.linesep)
-for disc in fstab:
-    if 'UUID' in disc and '/mnt/' in disc:
-        disc = disc.split()
-        for uuid in translateUUID:
-            if disc[0].replace('UUID=','') in uuid:
-                device = '/dev/' + str(uuid.split('/')[-1])[:-1]
-                print 'set',device,'standby time to 30s.'
-                os.popen('hdparm -S '+ str(config['hddStandbyTime']) + ' ' + device)
 
 
 
 
+if basic.getConfigData(config, 'startFirewallOnInit'):
+    try:
+        command = config['firewallRestartCommand']
+    except KeyError:
+        command = 'echo "done."'
+        
+    logging.debug(PROCESSNAME + ' starting firewall with command "'+ command+'".')
+    fwOut = os.popen(command+' 2>&1').read()
+    log.logStringLines(logging.debug, PROCESSNAME + ' firewall: ', fwOut)
+    if 'done.' in fwOut:
+        logging.info(PROCESSNAME + ' firewall started.')
+    elif 'Terminated' in fwOut:
+        logging.warning(PROCESSNAME + ' firewall not started!')
+    else:
+        logging.warning(PROCESSNAME + ' firewall status unknown!')
 
 
-logging.info(PROCESSNAME + ' started.')
+
+try:
+    hddStandbyTime = config['hddStandbyTime']
+    try:
+        excludedHardDisks = config['excludedDevices']
+    except KeyError:
+        excludedHardDisks = []
+    for hardDisk in system.getHardDisks():
+        if not hardDisk in excludedHardDisks:
+            logging.info(PROCESSNAME + ' set standby time of <' + hardDisk + '> to ' + str(hddStandbyTime) + ' sec...')
+            encodedStandByTime = int(hddStandbyTime)/5
+            out = os.popen('hdparm -S '+ str(encodedStandByTime) + ' ' + hardDisk + ' 2>&1').read()
+            print out
+            if 'Permission denied' in out:
+                logging.warning(PROCESSNAME + ' set standby time of <' + hardDisk + '> failed! Permission denied!')
+            else:
+                logging.debug(PROCESSNAME + ' standby time of <' + hardDisk + '> is now '+str(hddStandbyTime) + ' sec.')
+except KeyError:
+    pass
+
+
+
+logging.info(PROCESSNAME + ' is running.')
 try:
     while True:
         psax = system.getRunningProcesses()
-
-        if config['autoReconnect']:
-            if not system.existsPPPDevice():
+        
+        
+        if basic.getConfigData(config, 'autoReconnect'):
+            try:
+                online = False
+                try:
+                    checkIPs = config['onlineCheckIPs']
+                except KeyError:
+                    checkIPs = ('8.8.8.8',)
+                for ip in checkIPs:
+                    if basic.ping(ip):
+                        online = True
+                        break
+            except KeyError:
+                online = False
+            if system.existsPPPDevice() == False and online == False:
                 if not 's87reconnect' in psax: 
                     logging.info(PROCESSNAME + ' reconnecting to internet...')
                     system.connect()
                     time.sleep(2)
-        
-        for process in config['initProcesses'].keys():
-            if config['initProcesses'][process]:
+
+
+
+        try:
+            processes = config['initProcesses']
+        except KeyError:
+            processes = {}
+        for process in processes.keys():
+            if processes[process]:
                 if not process in psax:
-                    logging.info(PROCESSNAME + ' ' + process)
-                    os.popen(process + ' &')                
+                    logging.debug(PROCESSNAME + ' starting ' + process)
+                    logging.info(PROCESSNAME + ' ' + process + ' is not running. execute it.')
+                    os.popen(process + ' &')  
+
+
+
+        forceDisconnectTime = basic.getConfigData(config, 'forceDiscoTime')
+        if time.strftime('%H:%M') == forceDisconnectTime:
+            logging.info(PROCESSNAME + ' force disconnect at "'+ forceDisconnectTime +'". is disconnect time.')
+            os.popen('/opt/s87/bin/s87reconnect' + ' &')
+
 
         time.sleep(5)
 except KeyboardInterrupt:
-    print 'exit.'
+    logging.info(PROCESSNAME + ' exit by user.')
 

@@ -195,29 +195,31 @@ class InternetOffline_Event(object):
         self.mailSended = False
 
     def run(self):
-        online = False
-        for server in self.onlineCheckIPs:
-            if basic.ping(server):
-                online = True
-                break
-        if online:
-            if self.eventInAction:
-                self.offlineTime = self.getTime()-self.lastOnlineTime
-                subject = basic.HOSTNAME + ': connection error!'
-                message = 'Internet connection was down for '+ str(self.offlineTime) + ' sec.\nNew ip is ' + system.getExternIP()
-                self.sendMail(subject, message)                
-            self.lastOnlineTime = self.getTime()
-            self.eventInAction = False
-            self.mailSended = False
-        else:
-            self.eventInAction = True
-        if self.eventInAction:
-            if self.lastOnlineTime <= self.getTime()-self.reactionTime:
-                if not self.mailSended:
+        psax = system.getRunningProcesses()
+        if not 's87reconnect' in psax:
+            online = False
+            for server in self.onlineCheckIPs:
+                if basic.ping(server):
+                    online = True
+                    break
+            if online:
+                if self.eventInAction:
+                    self.offlineTime = self.getTime()-self.lastOnlineTime
                     subject = basic.HOSTNAME + ': connection error!'
-                    message = 'Internet connection is down!'
-                    self.sendMail(subject, message)
-                    self.mailSended = True             
+                    message = 'Internet connection was down for '+ str(self.offlineTime) + ' sec.\nNew ip is ' + system.getExternIP()
+                    self.sendMail(subject, message)                
+                self.lastOnlineTime = self.getTime()
+                self.eventInAction = False
+                self.mailSended = False
+            else:
+                self.eventInAction = True
+            if self.eventInAction:
+                if self.lastOnlineTime <= self.getTime()-self.reactionTime:
+                    if not self.mailSended:
+                        subject = basic.HOSTNAME + ': connection error!'
+                        message = 'Internet connection is down!'
+                        self.sendMail(subject, message)
+                        self.mailSended = True             
 
     def getTime(self):
         return time.mktime(time.localtime())
