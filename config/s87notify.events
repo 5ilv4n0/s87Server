@@ -43,5 +43,12 @@
             "8.8.4.4"
             ],
         "reactionTime": 10
+    },
+    {
+        "eventType": "Customized_Event",
+        "command": "ifconfig",
+        "interval": 60
+        "searchText": "eth0",
+        "eventByFound": true
     }
 ]

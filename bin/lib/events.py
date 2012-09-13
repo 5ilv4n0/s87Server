@@ -242,3 +242,35 @@ class DailyTime_Event(object):
                 self.mailSended = True
         else:
             self.mailSended = False
+
+class Customized_Event(object):
+    def __init__(self, eventConfig, mailMethod):
+        self.sendMail = mailMethod
+        self.command = eventConfig['command']
+        self.searchText = eventConfig['searchText']
+        self.eventByFound = eventConfig['eventByFound']
+        self.interval = eventConfig['interval']
+        self.eventInAction = False
+        self.eventInActionStartTime = False
+
+    def run(self):
+        if not self.eventInAction:
+            self.eventInAction = True
+            self.eventInActionStartTime = self.getTime()
+            out = os.popen(self.command + ' 2>&1').read()
+            if (self.searchText in out) == self.eventByFound:
+                subject = basic.HOSTNAME + ': Customized_Event.'
+                message = 'Customized_Event:\n\nCommand:\n '+ self.command + '\n\nOutput:\n ' + out
+                self.sendMail(subject, message)
+        else:
+            if self.getTime()-self.eventInActionStartTime >= self.interval:
+                self.eventInAction = False                
+
+    def getTime(self):
+        return time.mktime(time.localtime())
+
+
+
+
+
+
