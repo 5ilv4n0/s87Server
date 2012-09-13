@@ -100,9 +100,10 @@ class ConfigReader(object):
                 if not 'list' in str(type(config)):
                     if os.path.isfile('/opt/s87/DEBUG'):
                         config['logLevel'] = 9
+            return config                        
         else:
             print 'no valid json file!'
-            return config
+
 configReader = ConfigReader()
 
 
