@@ -52,7 +52,7 @@ class Mail(object):
         m += 'Subject: ' + self.subject + '\n'
         m += 'Date: ' + self.date + '\n\n'
         m += self.content
-        m += '.\n'
+        m += '\n\nSended by s87Server\nCopyright 2012 Silvano Wegener'
         return m
          
 class EmailClient(object):
