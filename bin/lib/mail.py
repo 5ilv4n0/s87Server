@@ -175,6 +175,6 @@ config = basic.s87config['s87notify']
 mailServer= MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
 
 
-mailServer.addMail(self, config['smtpConfig']['smtpUser'], config['smtpConfig']['smtpUser'], 'test', 'test')
+mailServer.addMail(config['smtpConfig']['smtpUser'], config['smtpConfig']['smtpUser'], 'test', 'test')
 mailServer.send()
 
