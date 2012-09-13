@@ -100,6 +100,8 @@ class ConfigReader(object):
                 if not 'list' in str(type(config)):
                     if os.path.isfile('/opt/s87/DEBUG'):
                         config['logLevel'] = 9
+        else:
+            print 'no valid json file!'
             return config
 configReader = ConfigReader()
 
@@ -152,6 +154,7 @@ def loadEvents(PROCESSNAME, eventsFile, local, email):
         eventType = event['eventType']
         if eventType == 'FileChange_Event': value = 'path'
         elif eventType == 'HDDFreeSpaceLow_Event': value = 'mountPoint'
+        elif eventType == 'Customized_Event': value = 'command'
         else: value = 'value'
 
         try:
