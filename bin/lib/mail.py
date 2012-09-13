@@ -58,9 +58,7 @@ class EmailClient(object):
     def __init__(self, server, username, password):
         self.server = server
         self.username = username
-        self.password = basic.encrypt(basic.getHostKey(), password)
-        print 'pass:'+ password
-        print self.password       
+        self.password = basic.encrypt(basic.getHostKey(), password)      
         self.mailIDs = []
         self.pop3conn = None
         self.smtpconn = None
@@ -79,6 +77,7 @@ class EmailClient(object):
             self.smtpconn.ehlo()
             self.smtpconn.starttls()
             self.smtpconn.ehlo()
+            print self.password
             self.smtpconn.login(self.username, basic.decrypt(basic.getHostKey(), self.password))
         return True
 
@@ -176,7 +175,6 @@ class MailQueue(object):
 config = basic.s87config['s87notify'] 
 mailServer= MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
 
-print mailServer.mailClient.username
-print mailServer.mailClient.password 
+
 
 
