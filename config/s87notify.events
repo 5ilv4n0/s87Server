@@ -47,7 +47,7 @@
     {
         "eventType": "Customized_Event",
         "command": "ifconfig",
-        "interval": 60
+        "interval": 60,
         "searchText": "eth0",
         "eventByFound": true
     }
