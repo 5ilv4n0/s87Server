@@ -52,6 +52,7 @@ class Mail(object):
         m += 'Subject: ' + self.subject + '\n'
         m += 'Date: ' + self.date + '\n\n'
         m += self.content
+        m += '.\n'
         return m
          
 class EmailClient(object):
