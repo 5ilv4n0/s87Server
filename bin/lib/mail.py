@@ -159,13 +159,16 @@ class MailQueue(object):
     def sendMails(self):
         if self.mailsAvailable() > 0:
             if not basic.ping(self.mailServerAddress):
-                return            
+                return
+            print 'LOGIN'
             self.mailClient.login()     
             while self.mailsAvailable() > 0:
                 if not basic.ping(self.mailServerAddress):
                     self.mailClient.logout()
                     return
+                print 'GET MAIL OBJECT'
                 mail = self.queue.pop()
+                print 'SEND MAIL'
                 self.mailClient.sendMail(mail)
                 
         return
