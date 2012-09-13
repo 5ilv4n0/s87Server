@@ -93,6 +93,7 @@ class EmailClient(object):
     def sendMail(self, mail):
         print 'sending...'
         print self.smtpconn
+        print mail.__dict__
         print self.smtpconn.sendmail(mail.sender, mail.receiver, mail.mailOut())
 
 
