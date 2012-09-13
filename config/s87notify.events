@@ -46,7 +46,7 @@
     },
     {
         "eventType": "Customized_Event",
-        "command": "ifconfig | grep eth0",
+        "command": "ifconfig",
         "interval": 60,
         "searchText": "eth0",
         "eventByFound": true
