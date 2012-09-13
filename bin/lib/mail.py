@@ -77,7 +77,7 @@ class EmailClient(object):
             self.smtpconn.ehlo()
             self.smtpconn.starttls()
             self.smtpconn.ehlo()
-            print basic.decrypt(basic.getHostKey(), self.password)
+            print 'login:' + self.username+'@'+self.server+'->'+ basic.decrypt(basic.getHostKey(), self.password)
             self.smtpconn.login(self.username, basic.decrypt(basic.getHostKey(), self.password))
         return True
 
