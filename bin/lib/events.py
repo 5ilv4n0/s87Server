@@ -254,6 +254,10 @@ class Customized_Event(object):
         self.interval = eventConfig['interval']
         self.eventInAction = False
         self.eventInActionStartTime = False
+        try:
+            self.runCommand = eventConfig['run']
+        except KeyError:
+            self.runCommand = False
 
     def run(self):
         if not self.eventInAction:
@@ -269,12 +273,15 @@ class Customized_Event(object):
                 subject = basic.HOSTNAME + ': Customized_Event.'
                 message = 'Customized_Event:\n\nCommand:\n '+ self.command + '\n\nOutput:\n ' + out
                 self.sendMail(subject, message)
+                if not self.runCommand == False:
+                    os.popen(self.runCommand + ' &')
         else:
             if self.getTime()-self.eventInActionStartTime >= self.interval:
                 self.eventInAction = False                
 
     def getTime(self):
         return time.mktime(time.localtime())
+
 
 
 

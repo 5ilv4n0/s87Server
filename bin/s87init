@@ -72,7 +72,6 @@ try:
             logging.info(PROCESSNAME + ' set standby time of <' + hardDisk + '> to ' + str(hddStandbyTime) + ' sec...')
             encodedStandByTime = int(hddStandbyTime)/5
             out = os.popen('hdparm -S '+ str(encodedStandByTime) + ' ' + hardDisk + ' 2>&1').read()
-            print out
             if 'Permission denied' in out:
                 logging.warning(PROCESSNAME + ' set standby time of <' + hardDisk + '> failed! Permission denied!')
             else:
