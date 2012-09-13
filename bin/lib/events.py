@@ -272,5 +272,3 @@ class Customized_Event(object):
 
 
 
-
-
