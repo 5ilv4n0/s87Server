@@ -59,6 +59,8 @@ class EmailClient(object):
         self.server = server
         self.username = username
         self.password = basic.encrypt(basic.getHostKey(), password)
+        print 'pass:'+ password
+        print self.password       
         self.mailIDs = []
         self.pop3conn = None
         self.smtpconn = None
@@ -171,5 +173,10 @@ class MailQueue(object):
         return
                 
 
-config = basic.s87config['s87notify']        
+config = basic.s87config['s87notify'] 
 mailServer= MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
+
+print mailServer.mailClient.username
+print mailServer.mailClient.password 
+
+
