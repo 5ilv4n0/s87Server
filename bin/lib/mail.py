@@ -91,7 +91,8 @@ class EmailClient(object):
 
 
     def sendMail(self, mail):
-        self.smtpconn.sendmail(mail.sender, mail.receiver, mail.mailOut())
+        print 'sending...'
+        print self.smtpconn.sendmail(mail.sender, mail.receiver, mail.mailOut())
 
 
     def readMail(self, mailID):
