@@ -77,7 +77,6 @@ class EmailClient(object):
             self.smtpconn.ehlo()
             self.smtpconn.starttls()
             self.smtpconn.ehlo()
-            print 'login:' + self.username+'@'+self.server+'->'+ basic.decrypt(basic.getHostKey(), self.password)
             self.smtpconn.login(self.username, basic.decrypt(basic.getHostKey(), self.password))
         return True
 
@@ -176,5 +175,6 @@ config = basic.s87config['s87notify']
 mailServer= MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    
 
 
-
+mailServer.addMail(self, config['smtpConfig']['smtpUser'], config['smtpConfig']['smtpUser'], 'test', 'test')
+mailServer.send()
 
