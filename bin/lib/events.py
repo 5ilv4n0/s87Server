@@ -258,7 +258,12 @@ class Customized_Event(object):
             self.eventInAction = True
             self.eventInActionStartTime = self.getTime()
             out = os.popen(self.command + ' 2>&1').read()
-            if (self.searchText in out) == self.eventByFound:
+            if self.searchText in out:
+                found = True
+            else:
+                found = False
+            
+            if found == self.eventByFound:
                 subject = basic.HOSTNAME + ': Customized_Event.'
                 message = 'Customized_Event:\n\nCommand:\n '+ self.command + '\n\nOutput:\n ' + out
                 self.sendMail(subject, message)
