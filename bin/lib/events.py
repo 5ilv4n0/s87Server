@@ -257,7 +257,7 @@ class Customized_Event(object):
         if not self.eventInAction:
             self.eventInAction = True
             self.eventInActionStartTime = self.getTime()
-            out = os.popen(self.command + ' 2>&1').read()
+            out = os.popen(self.command + ' 2>&1').read().decode("utf8")
             if self.searchText in out:
                 found = True
             else:
