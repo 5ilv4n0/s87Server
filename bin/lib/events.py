@@ -265,7 +265,7 @@ class Customized_Event(object):
             
             if found == self.eventByFound:
                 subject = basic.HOSTNAME + ': Customized_Event.'
-                message = 'Customized_Event:\n\nCommand:\n '+ self.command + '\n\nOutput:\n ' + out
+                message = 'Customized_Event:\n\nCommand:\n '+ self.command + '\n\nOutput:\n ' + out..encode("utf8")
                 self.sendMail(subject, message)
         else:
             if self.getTime()-self.eventInActionStartTime >= self.interval:
