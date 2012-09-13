@@ -105,7 +105,7 @@ class ConfigReader(object):
             print 'no valid json file!'
 
 configReader = ConfigReader()
-
+s87config = configReader.readConfig('/opt/s87/config/s87.conf')
 
 class GetValue(object):
     def __init__(self):

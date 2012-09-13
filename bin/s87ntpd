@@ -27,7 +27,7 @@ import log
 import basic
 PROCESSNAME = os.path.split(sys.argv[0])[1]
 hostName = basic.HOSTNAME
-config = basic.configReader.readConfig('/opt/s87/config/s87ntpd.conf')
+config = basic.s87config[PROCESSNAME]
 
 
 if os.path.isfile('/opt/s87/DEBUG'):

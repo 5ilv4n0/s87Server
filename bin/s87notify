@@ -32,7 +32,7 @@ import mail
 
 
 PROCESSNAME	= os.path.split(sys.argv[0])[1]
-config		= basic.configReader.readConfig('/opt/s87/config/s87notify.conf')
+config		= basic.s87config[PROCESSNAME]
 logging		= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
 logging.info(PROCESSNAME + ' start...')
 
