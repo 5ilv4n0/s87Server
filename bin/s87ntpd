@@ -28,10 +28,6 @@ import basic
 PROCESSNAME = os.path.split(sys.argv[0])[1]
 hostName = basic.HOSTNAME
 config = basic.s87config[PROCESSNAME]
-
-
-if os.path.isfile('/opt/s87/DEBUG'):
-    config['logLevel'] = 99
 logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
 
 
@@ -53,6 +49,7 @@ def setHWClock():
 logging.info('starting...')
 try:
     while True:
+        success = False
         for server in config['ntpServers']:
             logging.info('try ntp server <' + server + '>')
             r = syncTime(server)
@@ -61,8 +58,10 @@ try:
                 setHWClock()
                 logging.debug('wait ' + str(config['updateInterval']) + ' sec...')
                 time.sleep(config['updateInterval'])
+                success = True
                 break
-        time.sleep(30)
+        if not success:
+            time.sleep(30)
 except KeyboardInterrupt:
     print 'exit.'
 
