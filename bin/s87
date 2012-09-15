@@ -28,6 +28,9 @@ import log
 import system
 import basic
 import mail
+
+print sys.argv
+
 if len(sys.argv) < 3:
     sys.exit()
 
