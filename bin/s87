@@ -48,6 +48,7 @@ def getPID(PROCESSNAME):
 
 
 pID = getPID(PROCESSNAME)
+print pID
 if not pID == False:
     if sys.argv[2] == 'restart':
         os.popen('kill ' + str(pID))
