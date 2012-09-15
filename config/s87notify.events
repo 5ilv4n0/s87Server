@@ -1,6 +1,6 @@
 [
     {
-        "eventType": "DailyTime_Event",
+        "eventType": "DailyHDDSpaceInfo_Event",
         "value": "HDDFREESPACE",
         "time": "12:00"
     },

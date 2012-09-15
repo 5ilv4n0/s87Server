@@ -223,7 +223,7 @@ class InternetOffline_Event(object):
     def getTime(self):
         return time.mktime(time.localtime())
 
-class DailyTime_Event(object):
+class DailyHDDSpaceInfo_Event(object):
     def __init__(self, eventConfig, mailMethod):
         self.getValue = basic.valueGetter.get
         self.sendMail = mailMethod
