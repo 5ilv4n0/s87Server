@@ -48,6 +48,7 @@ pID = getPID(PROCESSNAME)
 if not pID == False:
     if sys.argv[2] == 'restart':
         os.popen('kill ' + str(pID))
+        print 'restarted'
 sys.exit()
 
 
