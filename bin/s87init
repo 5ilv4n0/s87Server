@@ -23,9 +23,8 @@
 #  
 import os, sys, json, re, time, subprocess
 
-s87initCount =  os.popen('ps ax | grep s87init | grep -v grep | grep -v less | wc -l').read()
-if int(s87initCount) > 1:
-    sys.exit()
+
+
     
 sys.path.append('/opt/s87/bin/lib')
 sys.path.append('/opt/s87/config')
@@ -34,50 +33,17 @@ import system
 import basic
 import mail
 PROCESSNAME	= os.path.split(sys.argv[0])[1]
-config		= basic.s87config[PROCESSNAME]
-logging		= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
+basic.ifProcessRunningThenExit(PROCESSNAME)
+config = basic.s87config[PROCESSNAME]
+logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
 logging.info(PROCESSNAME + ' start...')
 
 
+basic.startFirewallIfNeeded(PROCESSNAME, config, logging)
+basic.setHDDStandbyTimeIfNeeded(PROCESSNAME, config, logging)
 
 
 
-
-if basic.getConfigData(config, 'startFirewallOnInit'):
-    try:
-        command = config['firewallRestartCommand']
-    except KeyError:
-        command = 'echo "done."'
-        
-    logging.debug(PROCESSNAME + ' starting firewall with command "'+ command+'".')
-    fwOut = os.popen(command+' 2>&1').read()
-    log.logStringLines(logging.debug, PROCESSNAME + ' firewall: ', fwOut)
-    if 'done.' in fwOut:
-        logging.info(PROCESSNAME + ' firewall started.')
-    elif 'Terminated' in fwOut:
-        logging.warning(PROCESSNAME + ' firewall not started!')
-    else:
-        logging.warning(PROCESSNAME + ' firewall status unknown!')
-
-
-
-try:
-    hddStandbyTime = config['hddStandbyTime']
-    try:
-        excludedHardDisks = config['excludedDevices']
-    except KeyError:
-        excludedHardDisks = []
-    for hardDisk in system.getHardDisks():
-        if not hardDisk in excludedHardDisks:
-            logging.info(PROCESSNAME + ' set standby time of <' + hardDisk + '> to ' + str(hddStandbyTime) + ' sec...')
-            encodedStandByTime = int(hddStandbyTime)/5
-            out = os.popen('hdparm -S '+ str(encodedStandByTime) + ' ' + hardDisk + ' 2>&1').read()
-            if 'Permission denied' in out:
-                logging.warning(PROCESSNAME + ' set standby time of <' + hardDisk + '> failed! Permission denied!')
-            else:
-                logging.debug(PROCESSNAME + ' standby time of <' + hardDisk + '> is now '+str(hddStandbyTime) + ' sec.')
-except KeyError:
-    pass
 
 
 
@@ -85,27 +51,7 @@ logging.info(PROCESSNAME + ' is running.')
 try:
     while True:
         psax = system.getRunningProcesses()
-        
-        
-        if basic.getConfigData(config, 'autoReconnect'):
-            try:
-                online = False
-                try:
-                    checkIPs = config['onlineCheckIPs']
-                except KeyError:
-                    checkIPs = ('8.8.8.8',)
-                for ip in checkIPs:
-                    if basic.ping(ip):
-                        online = True
-                        break
-            except KeyError:
-                online = False
-            if system.existsPPPDevice() == False and online == False:
-                if not 's87reconnect' in psax: 
-                    logging.info(PROCESSNAME + ' reconnecting to internet...')
-                    system.connect()
-                    time.sleep(2)
-
+        basic.autoReconnectIfNeeded(psax, config, PROCESSNAME, logging)
 
 
         try:
@@ -120,13 +66,7 @@ try:
                     os.popen(process + ' &')  
 
 
-
-        forceDisconnectTime = basic.getConfigData(config, 'forceDiscoTime')
-        if time.strftime('%H:%M') == forceDisconnectTime:
-            logging.info(PROCESSNAME + ' force disconnect at "'+ forceDisconnectTime +'". is disconnect time.')
-            os.popen('/opt/s87/bin/s87reconnect' + ' &')
-
-
+        basic.forceDisconnectTimeIfNeeded(psax, config, PROCESSNAME, logging)
         time.sleep(5)
 except KeyboardInterrupt:
     logging.info(PROCESSNAME + ' exit by user.')

@@ -67,6 +67,7 @@ class LogFile(object):
         dateTimeStamp = time.strftime("%d.%m.%Y %H:%M:%S", time.localtime())
         return dateTimeStamp
 
+
 def logStringLines(cmd, prefix, string):
     for line in string.split(os.linesep):
         if not line == '':

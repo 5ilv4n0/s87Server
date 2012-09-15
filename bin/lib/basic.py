@@ -21,10 +21,11 @@
 #  MA 02110-1301, USA.
 #  
 # 
-import os, sys, subprocess, re, json
+import os, sys, subprocess, re, json, time
 sys.path.append('/opt/s87/bin/lib')
 sys.path.append('/opt/s87/config')
 import log
+import system
 HOSTNAME = os.popen('cat /etc/hostname').read().replace(os.linesep,'') 
 CRYPTPATH = '/opt/s87/bin/lib/crypt'
 
@@ -87,7 +88,6 @@ def processOpen(cmd):
     return p.communicate()
 
 
-
 class ConfigReader(object):
     def __init__(self):
         pass
@@ -106,7 +106,6 @@ class ConfigReader(object):
 
 configReader = ConfigReader()
 s87config = configReader.readConfig('/opt/s87/config/s87.conf')
-
 
 def getConfigData(conf, key):
     try:
@@ -154,7 +153,6 @@ class GetValue(object):
         return mountPoints
 valueGetter = GetValue()
 
-
 def loadEvents(PROCESSNAME, eventsFile, local, email):
     config = configReader.readConfig('/opt/s87/config/s87.conf')
     logging	= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
@@ -177,3 +175,99 @@ def loadEvents(PROCESSNAME, eventsFile, local, email):
         except:
             pass
     return ReturnEvents
+
+
+
+
+
+def ifProcessRunningThenExit(PROCESSNAME):
+    s87initCount =  os.popen('ps ax | grep ' + PROCESSNAME + ' | grep -v grep | grep -v less | wc -l').read()
+    if int(s87initCount) > 1:
+        sys.exit()
+
+def startFirewallIfNeeded(PROCESSNAME, config, logging):
+    if getConfigData(config, 'startFirewallOnInit'):
+        try:
+            command = config['firewallRestartCommand']
+        except KeyError:
+            command = 'echo "done."' 
+        logging.debug(PROCESSNAME + ' starting firewall with command "'+ command+'".')
+        fwOut = os.popen(command+' 2>&1').read()
+        log.logStringLines(logging.debug, PROCESSNAME + ' firewall: ', fwOut)
+        if 'done.' in fwOut:
+            logging.info(PROCESSNAME + ' firewall started.')
+        elif 'Terminated' in fwOut:
+            logging.warning(PROCESSNAME + ' firewall not started!')
+        else:
+            logging.warning(PROCESSNAME + ' firewall status unknown!')
+
+
+def setHDDStandbyTimeIfNeeded(PROCESSNAME, config, logging):
+    hddStandbyTime = getHDDStandbyTimeFromConfig(config)
+    if hddStandbyTime == False:
+        return False
+    excludedHardDisks = getExcludedHardDisks(config)
+    for hardDisk in system.getHardDisks():
+        if not hardDisk in excludedHardDisks:
+            setDeviceStandbyTime(hardDisk, hddStandbyTime, PROCESSNAME, logging)
+    return True
+
+def getHDDStandbyTimeFromConfig(config):
+    try:
+        hddStandbyTime = config['hddStandbyTime']
+    except KeyError:
+        hddStandbyTime = False
+    return hddStandbyTime
+    
+def getExcludedHardDisks(config):
+    try:
+        excludedHardDisks = config['excludedDevices']
+    except KeyError:
+        excludedHardDisks = []
+    return excludedHardDisks
+
+def setDeviceStandbyTime(device, seconds, PROCESSNAME, logging):
+    logging.info(PROCESSNAME + ' set standby time of <' + device + '> to ' + str(seconds) + ' sec...')
+    encodedStandbyTime = int(seconds)/5
+    out = os.popen('hdparm -S '+ str(encodedStandbyTime) + ' ' + device + ' 2>&1').read()
+    if 'Permission denied' in out:
+        logging.warning(PROCESSNAME + ' set standby time of <' + device + '> failed! Permission denied!')
+    else:
+        logging.debug(PROCESSNAME + ' standby time of <' + device + '> is now '+str(seconds) + ' sec.')    
+    
+    
+def autoReconnectIfNeeded(psax, config, PROCESSNAME, logging):
+    if not getConfigData(config, 'autoReconnect'):
+        return False
+    checkIPs = getCheckIPs(config)
+    if system.existsPPPDevice() == False and isOnline(checkIPs) == False:
+        if 's87reconnect' in psax:
+            return False 
+        logging.info(PROCESSNAME + ' reconnecting to internet...')
+        system.connect()
+        time.sleep(2)   
+
+def getCheckIPs(config):
+    try:
+        checkIPs = config['onlineCheckIPs']
+    except KeyError:
+        checkIPs = ('8.8.8.8',)
+    return checkIPs
+
+def isOnline(checkIPs):
+    for ip in checkIPs:
+        if ping(ip):
+            return True
+            break
+    return False
+
+
+def forceDisconnectTimeIfNeeded(psax, config, PROCESSNAME, logging):
+    forceDisconnectTime = getConfigData(config, 'forceDiscoTime')
+    if 's87reconnect' in psax:
+        return False 
+    if time.strftime('%H:%M') == forceDisconnectTime:
+        logging.info(PROCESSNAME + ' force disconnect at "'+ forceDisconnectTime +'". is disconnect time.')
+        os.popen('/opt/s87/bin/s87reconnect &')    
+        return True
+    return False

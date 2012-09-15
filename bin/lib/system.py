@@ -68,7 +68,6 @@ def getExternIP():
             else:
                 return '127.0.0.1'
 
-
 def getHardDisks():
     out = os.popen('ls -l /dev/sd*').read()
     devices = list(set(re.findall(r'/dev/sd.', out)))
