@@ -29,7 +29,6 @@ import system
 import basic
 import mail
 
-print sys.argv
 
 if len(sys.argv) < 3:
     sys.exit()
@@ -48,7 +47,6 @@ def getPID(PROCESSNAME):
 
 
 pID = getPID(PROCESSNAME)
-print pID
 if not pID == False:
     if sys.argv[2] == 'restart':
         os.popen('kill ' + str(pID))
