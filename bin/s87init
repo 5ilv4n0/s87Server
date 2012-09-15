@@ -22,10 +22,6 @@
 #  
 #  
 import os, sys, json, re, time, subprocess
-
-
-
-    
 sys.path.append('/opt/s87/bin/lib')
 sys.path.append('/opt/s87/config')
 import log
@@ -43,9 +39,10 @@ basic.startFirewallIfNeeded(PROCESSNAME, config, logging)
 basic.setHDDStandbyTimeIfNeeded(PROCESSNAME, config, logging)
 
 
-
-
-
+try:
+    processesToInit = config['initProcesses']
+except KeyError:
+    processesToInit = {}
 
 logging.info(PROCESSNAME + ' is running.')
 try:
@@ -54,12 +51,8 @@ try:
         basic.autoReconnectIfNeeded(psax, config, PROCESSNAME, logging)
 
 
-        try:
-            processes = config['initProcesses']
-        except KeyError:
-            processes = {}
-        for process in processes.keys():
-            if processes[process]:
+        for process in processesToInit.keys():
+            if processesToInit[process]:
                 if not process in psax:
                     logging.debug(PROCESSNAME + ' starting ' + process)
                     logging.info(PROCESSNAME + ' ' + process + ' is not running. execute it.')

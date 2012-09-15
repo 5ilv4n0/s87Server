@@ -29,7 +29,6 @@ import system
 import basic
 import mail
 
-
 class NormalToHigh_Event(object):
     def __init__(self, eventConfig, mailMethod):
         self.sendMail = mailMethod
@@ -239,7 +238,8 @@ class DailyTime_Event(object):
                 subject = basic.HOSTNAME + ': ' + self.valueName + ' info.'
                 message = 'HDD Memory Info:\n\n'
                 for mountPoint in values.keys():
-                    message += mountPoint + ':\n '+'capacity:'.ljust(20,'.') + str(values[mountPoint]['capacity']).rjust(12,'.')+ ' MB\n ' + 'free:'.ljust(20,'.')+ str(values[mountPoint]['free']).rjust(12,'.')+ ' MB\n ' + 'in use:'.ljust(20,'.')+ str(values[mountPoint]['used%']).rjust(12,'.') + ' %\n\n'
+                    if mountPoint in basic.s87config['s87notify']['mountPoints']:
+                        message += mountPoint + ':\n '+'capacity:'.ljust(20,'.') + str(values[mountPoint]['capacity']).rjust(12,'.')+ ' MB\n ' + 'free:'.ljust(20,'.')+ str(values[mountPoint]['free']).rjust(12,'.')+ ' MB\n ' + 'in use:'.ljust(20,'.')+ str(values[mountPoint]['used%']).rjust(12,'.') + ' %\n\n'
                 self.sendMail(subject, message)
                 self.mailSended = True
         else:

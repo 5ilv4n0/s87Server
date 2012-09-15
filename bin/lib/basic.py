@@ -99,7 +99,7 @@ class ConfigReader(object):
                 config = json.load(f)
                 if not 'list' in str(type(config)):
                     if os.path.isfile('/opt/s87/DEBUG'):
-                        config['logLevel'] = 9
+                        config['logLevel'] = 3
             return config                        
         else:
             print 'no valid json file!'
@@ -263,9 +263,9 @@ def isOnline(checkIPs):
 
 
 def forceDisconnectTimeIfNeeded(psax, config, PROCESSNAME, logging):
-    forceDisconnectTime = getConfigData(config, 'forceDiscoTime')
     if 's87reconnect' in psax:
-        return False 
+        return False     
+    forceDisconnectTime = getConfigData(config, 'forceDiscoTime')
     if time.strftime('%H:%M') == forceDisconnectTime:
         logging.info(PROCESSNAME + ' force disconnect at "'+ forceDisconnectTime +'". is disconnect time.')
         os.popen('/opt/s87/bin/s87reconnect &')    
