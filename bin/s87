@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  s87notify
+#  s87.py
 #  
 #  Copyright 2012 Silvano Wegener <silvano@DV8000>
 #  
@@ -20,42 +20,34 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #  
-# 
-import os, sys, json, time, re
+#  
+import os, sys, json, re, time, subprocess
 sys.path.append('/opt/s87/bin/lib')
 sys.path.append('/opt/s87/config')
-from events import *
 import log
 import system
 import basic
 import mail
-
-
-PROCESSNAME	= os.path.split(sys.argv[0])[1]
-config		= basic.s87config[PROCESSNAME]
-logging		= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
-logging.info(PROCESSNAME + ' start...')
-
-def email(subject, message):
-    mail.mailServer.addMail(mail.config['smtpConfig']['smtpUser'], mail.config['smtpConfig']['smtpUser'], subject, message)
-    logging.debug('send mail: '+ subject)
-
-
-
-
-events = basic.loadEvents(PROCESSNAME, '/opt/s87/config/s87notify.events',locals(), email)
-
-logging.info(PROCESSNAME + ' is running.')
-try:
-    while True:
-        for event in events:
-            event.run()
-        try:
-            mail.mailServer.send()
-        except:
-            logging.critical('not able to send mails!')
-            sys.exit(1)
-        time.sleep(2)
-except KeyboardInterrupt:
-    logging.info(PROCESSNAME + ' stopped by user.')
+if len(sys.argv) < 3:
     sys.exit()
+
+PROCESSNAME = sys.argv[1]
+
+def getPID(PROCESSNAME):
+    pID = os.popen('ps ax | grep ' + PROCESSNAME + ' | grep -v grep').read().split(os.linesep)
+    for line in pID:
+        line = line.strip()
+        r = re.match(r'(\d+) .+python.+' + PROCESSNAME + '.*',line)
+        if not r == None:
+            return r.groups()[0]
+    print PROCESSNAME, 'is not running!'
+    return False
+
+
+pID = getPID(PROCESSNAME)
+if not pID == False:
+    if sys.argv[2] == 'restart':
+        os.popen('kill ' + str(pID))
+sys.exit()
+
+

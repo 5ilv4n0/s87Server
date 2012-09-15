@@ -35,6 +35,10 @@ logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLe
 logging.info(PROCESSNAME + ' start...')
 
 
+initScripts = os.listdir('/etc/init.d')
+if not 's87' in initScripts:
+    os.popen('ln -s /opt/s87/bin/s87 /etc/init.d/s87')
+
 basic.startFirewallIfNeeded(PROCESSNAME, config, logging)
 basic.setHDDStandbyTimeIfNeeded(PROCESSNAME, config, logging)
 
