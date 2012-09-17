@@ -37,9 +37,9 @@ def reconnect():
     logging.debug('disconnecting...')
     system.disconnect()
     time.sleep(2)
-    logging.debug('connecting...')
-    system.connect()
-    time.sleep(2)
+    #logging.debug('connecting...')
+    #system.connect()
+    time.sleep(10)
     logging.info('new ip is: ' + system.getExternIP())
 
 
