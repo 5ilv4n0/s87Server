@@ -154,7 +154,7 @@ class GetValue(object):
 valueGetter = GetValue()
 
 def loadEvents(PROCESSNAME, eventsFile, local, email):
-    config = configReader.readConfig('/opt/s87/config/s87.conf')
+    config = configReader.readConfig('/opt/s87/config/s87.conf')['s87notify']
     logging	= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
     events = configReader.readConfig(eventsFile)
     ReturnEvents = []
