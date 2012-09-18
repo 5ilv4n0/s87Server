@@ -29,7 +29,8 @@ processName = os.path.split(sys.argv[0])[1]
 debug = False
 if os.path.isfile('/opt/s87/DEBUG'):
     debug = True
-    logging = log.LogFile(processName, '/tmp/' + processName + '.log')
+
+logging = log.LogFile(processName, '/tmp/' + processName + '.log')
 
 
 
