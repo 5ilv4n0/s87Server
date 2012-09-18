@@ -44,7 +44,7 @@ def existsPPPDevice():
     return True
 
 def disconnect():
-    if existsPPPDevice():
+    while existsPPPDevice():
         os.system('poff -a')
 
 def connect():
