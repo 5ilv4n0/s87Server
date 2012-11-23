@@ -40,7 +40,7 @@ if not 's87' in initScripts:
     os.popen('ln -s /opt/s87/bin/s87 /etc/init.d/s87')
 
 basic.startFirewallIfNeeded(PROCESSNAME, config, logging)
-basic.setHDDStandbyTimeIfNeeded(PROCESSNAME, config, logging)
+#basic.setHDDStandbyTimeIfNeeded(PROCESSNAME, config, logging)
 
 
 try:
@@ -52,7 +52,7 @@ logging.info(PROCESSNAME + ' is running.')
 try:
     while True:
         psax = system.getRunningProcesses()
-        basic.autoReconnectIfNeeded(psax, config, PROCESSNAME, logging)
+        #basic.autoReconnectIfNeeded(psax, config, PROCESSNAME, logging)
 
 
         for process in processesToInit.keys():
@@ -67,4 +67,3 @@ try:
         time.sleep(5)
 except KeyboardInterrupt:
     logging.info(PROCESSNAME + ' exit by user.')
-

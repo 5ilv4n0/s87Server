@@ -1,0 +1,1 @@
+uvccapture -d/dev/video0 -x640 -y480 -o/opt/silvano87.de/www/bild.jpg -q100

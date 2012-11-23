@@ -1,0 +1,146 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  system.py
+#  
+#  Copyright 2012 Silvano Wegener <silvano@DV8000>
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#  
+#  
+import os, sys, json, re, time, subprocess
+sys.path.append('/opt/s87/bin/lib')
+sys.path.append('/opt/s87/config')
+import log
+import system
+import basic
+import mail
+
+if not '-get' in sys.argv:
+    PROCESSNAME	= os.path.split(sys.argv[0])[1]
+    basic.ifProcessRunningThenExit(PROCESSNAME)
+    config = basic.s87config[PROCESSNAME]
+    logging = log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logLevel'])
+    logging.info(PROCESSNAME + ' start...')
+
+
+
+
+def getSystemDevice():
+    device = re.findall(r'(/dev/sd.).+',os.popen('mount | grep /boot').read())[0]
+    return device
+
+def getAllDiskDevices():
+    devices = re.findall(r'(/dev/sd.).+',os.popen('ls -l /dev/sd*').read())
+    return sorted(list(set(devices)))
+
+def getDisksState():
+    drives = getAllDiskDevices()
+    status = {}
+    for drive in drives:
+        status[drive] = getDiskState(drive)
+    return status
+
+def getDiskState(drive):
+    if not drive in getAllDiskDevices():
+        return 'False'
+    state = False
+    if os.popen('hdparm -C ' + drive).read().replace(os.linesep,'').replace(drive+':','').replace(' drive state is:  ','').replace('/idle','').replace(':',': ') == 'active':
+        state = True
+    return state
+
+def setStandbyTimeOfDevice(device, seconds):
+    standbyTime = int(seconds)/5
+    os.popen('hdparm -S '+ str(standbyTime) + ' ' + device + ' 2>&1').read()
+    return True
+
+def setStandbyTimeOfDevices():
+    for device in getAllDiskDevices():
+        if not device == getSystemDevice():
+            print setStandbyTimeOfDevice(device, 30)
+
+def setDeviceToStandby(device):
+    os.popen('hdparm -Y '+ device + ' 2>&1').read()
+    return True
+
+def getDevicesActivity(gDevice=False):
+    with open('/proc/diskstats') as diskstats:
+        lines = diskstats.read().split(os.linesep)
+    
+    filteredLines = []
+    for line in lines:
+        if not line == '':
+            if len(line.split()[2]) == 3:
+                filteredLines.append(line)
+    diskstat = {}
+    for line in filteredLines:
+        stat = {}
+        lineSplit = line.split()
+        device = '/dev/' + lineSplit[2]
+        values = lineSplit[3:]
+        stat['online'] = getDiskState(device)
+        stat['readsIssued'] = values[0]
+        stat['readsMerged'] = values[1]
+        stat['sectorsRead'] = values[2]
+        stat['millisecondsReading'] = values[3]
+        stat['writesCompleted'] = values[4]
+        stat['writesMerged'] = values[5]
+        stat['sectorsWritten'] = values[6]
+        stat['millisecondsWriting'] = values[7]
+        stat['IOsInProgress'] = values[8]
+        stat['millisecondsIOs'] = values[9]
+        stat['weighted'] = values[10]
+
+        diskstat[device] = stat
+        
+    if gDevice == False:
+        return diskstat
+    return diskstat[gDevice]
+
+if '-get' in sys.argv:
+    print json.dumps(getDisksState(), indent=4)
+    sys.exit()
+
+
+
+systemDevice = getSystemDevice()
+info = getDevicesActivity()
+logging.info(PROCESSNAME + ' hddStandbyTime is ' + str(config['hddStandbyTime']) + ' seconds.')
+time.sleep(config['hddStandbyTime'])
+while True:
+    drivesInUse = []
+    for device in getAllDiskDevices():
+        if getDiskState(device):
+            currentInfo = getDevicesActivity()
+            if not currentInfo[device] == info[device]:
+                drivesInUse.append(device)
+                logging.debug(PROCESSNAME + ' device "'+device+'" in use.')
+                
+    for device in getAllDiskDevices(): 
+        if getDiskState(device):
+            if not device in drivesInUse:
+                if not device == systemDevice:
+                    setDeviceToStandby(device)
+                    logging.info(PROCESSNAME + ' set "'+device+'" to standby.')
+
+    info = getDevicesActivity()    
+    time.sleep(config['hddStandbyTime'])
+  
+        
+
+
+
+

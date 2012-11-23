@@ -206,7 +206,10 @@ def setHDDStandbyTimeIfNeeded(PROCESSNAME, config, logging):
     hddStandbyTime = getHDDStandbyTimeFromConfig(config)
     if hddStandbyTime == False:
         return False
-    excludedHardDisks = getExcludedHardDisks(config)
+    #excludedHardDisks = getExcludedHardDisks(config)
+    line = os.popen(' mount | grep /boot').read().replace(os.linesep,'')
+    excludedHardDisks = re.findall(r'(/dev/sd.).+', line)
+    
     for hardDisk in system.getHardDisks():
         if not hardDisk in excludedHardDisks:
             setDeviceStandbyTime(hardDisk, hddStandbyTime, PROCESSNAME, logging)
@@ -245,7 +248,7 @@ def autoReconnectIfNeeded(psax, config, PROCESSNAME, logging):
             return False 
         logging.info(PROCESSNAME + ' reconnecting to internet...')
         system.connect()
-        time.sleep(2)   
+        time.sleep(10)   
 
 def getCheckIPs(config):
     try:

@@ -177,6 +177,10 @@ class MailQueue(object):
                 
         return
                 
+if len(sys.argv) > 1:
+    if sys.argv[1] == 'getmailpw':
+        print basic.encrypt(basic.getHostKey(), 'ABCabc123456')
+        sys.exit()
 
 config = basic.s87config['s87notify'] 
 mailServer= MailQueue(config['smtpConfig']['mailServer'], config['smtpConfig']['smtpUser'], basic.decrypt(basic.getHostKey(), config['smtpConfig']['password']))    

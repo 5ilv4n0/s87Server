@@ -13,27 +13,7 @@
         "unit": "C"
     },
     {
-        "eventType": "HDDFreeSpaceLow_Event",
-        "mountPoint" : "/mnt/2000GB",
-        "minimalMB": 10240,
-        "notifyInterval": 3600
-    },
-    {
-        "eventType": "HDDFreeSpaceLow_Event",
-        "mountPoint" : "/mnt/600GB",
-        "minimalMB": 10240,
-        "notifyInterval": 3600
-    },
-    {
         "eventType": "FileChange_Event",
         "path": "/etc/shorewall"
-    },
-    {
-        "eventType": "InternetOffline_Event",
-        "onlineCheckIPs": [
-            "8.8.8.8",
-            "8.8.4.4"
-            ],
-        "reactionTime": 10
     }
 ]

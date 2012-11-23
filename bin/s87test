@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os, sys, re
+import json, socket
+sys.path.append('/opt/s87/bin/lib')
+sys.path.append('/opt/s87/config')
+import threading
+import connection
+import time
+
+
+serverConfig = {
+        "cert": "/opt/s87/src/cert.pem", 
+        "key": "/opt/s87/src/key.pem", 
+        "listen": "0.0.0.0", 
+        "port": 22222}
+
+
+server = connection.SockServer(connection.ServerHandler, serverConfig)
+
+threads = {}
+threads['server'] = threading.Thread(target=server.serve_forever)
+threads['server'].daemon = True
+threads['server'].start()
+
+while True:
+    time.sleep(0.5)
+			

@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+
+import os, sys
+
+for e in sys.argv[1:]:
+	os.system('unrar x ' + e + ' -pserienjunkies.org')
+

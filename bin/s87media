@@ -1,0 +1,715 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+print 'start'
+import kaa.metadata
+import os, sys
+import json, re, time
+import MySQLdb
+
+import xml.dom.minidom as xml
+
+ 
+
+
+
+if len(sys.argv) - 1 < 1:
+	moviePaths = []
+else:
+	moviePaths = sys.argv[1:]
+
+
+
+
+movieFormats = []
+movieFormats.append('.mkv')
+movieFormats.append('.avi')
+movieFormats.append('.mpg')
+movieFormats.append('.vob')
+
+
+
+
+
+def makeIntOrUseDefault(value, defaultValue=0):
+    try:
+        value = int(value)
+        return value
+    except ValueError:
+        return defaultValue
+
+
+
+class MySQLConnection(object):
+
+    def __init__(self, address, port, username, password, databaseName=''):
+        self.address = address
+        self.port = makeIntOrUseDefault(port, 3306)
+        self.__username = username
+        self.__password = password
+        self.databaseName = databaseName
+        self.__connection = self.connect(self.address,  self.port, self.__username, self.__password)
+        self.__tables = {}
+        self.history = []
+
+    def connect(self, address, port, username, password):
+        try:
+            conn = MySQLdb.connect(host=address, port=port, user=username, passwd=password)
+            return conn
+        except MySQLdb.Error, error:
+            sqlErrorCode = error[0]
+            print self.translateSQLErrorCode(sqlErrorCode)
+            sys.exit(1)
+        
+    def translateSQLErrorCode(self, sqlErrorCode):
+        sqlErrorCodes = {}
+        sqlErrorCodes[1045] = 'Access denied!'
+        sqlErrorCodes[2003] = 'Could not connect to sql server!'        
+        return sqlErrorCodes[sqlErrorCode]
+
+    def createDatabase(self, databaseName):
+        return self.executeSQL('create database', databaseName)
+
+    def dropDatabase(self, databaseName):
+        return self.executeSQL('drop database', databaseName)
+
+    def useDatabase(self, databaseName):
+        return self.executeSQL('use', databaseName)
+
+    def createTable(self, **tableParameters):
+        try:
+            tableName = tableParameters['name']
+            attributes = tableParameters['attributes']
+            self.__tables[tableName] = {}
+        except KeyError:
+            return False
+        try:
+            foreignKeys = tableParameters['foreignKeys']
+        except KeyError:
+            foreignKeys = []
+        foreignKeyParts = []
+        attributeNames = []
+        for foreignKeyInfo in foreignKeys:
+            foreignKeyInfo = foreignKeyInfo.split()
+            foreignKeyName = '_'.join(foreignKeyInfo)
+            foreignKeyParts.append('foreign key(' + foreignKeyName + ') references ' + foreignKeyInfo[0] + '(' + foreignKeyInfo[1] + ')')
+        createTableCommand = []
+        createTableCommand.append('create table')
+        createTableCommand.append(tableName)
+        createTableCommand.append('(')
+        attributeCommandParts = []
+        for attribute in attributes:
+            attribute = attribute.split()
+            attributeName = attribute[0]
+            attributeNames.append(attributeName)
+            attributeType = attribute[1]
+            try:
+                attributeLength = attribute[2]
+            except IndexError:
+                attributeLength = '0'
+
+            attributeIsPrimaryKey = False
+            attributeAutoIncrement = False
+            if 'primaryKey' in attribute:
+                attributeIsPrimaryKey = True
+            if 'autoIncrement' in attribute:
+                attributeAutoIncrement = True
+            attributeCommandPart = attributeName + ' '
+            if not attributeLength == '0':
+                attributeCommandPart += attributeType + '(' + str(attributeLength) + ')'
+            else:
+                attributeCommandPart += attributeType
+            if attributeAutoIncrement:
+                attributeCommandPart += ' auto_increment'
+            if attributeIsPrimaryKey:
+                attributeCommandPart += ' primary key'
+            attributeCommandParts.append(attributeCommandPart)
+        attributeCommandParts.extend(foreignKeyParts)
+        createTableCommand.append(', '.join(attributeCommandParts))
+        createTableCommand.append(') ENGINE=InnoDB')
+        createTableCommand = ' '.join(createTableCommand)
+        self.__tables[tableName]['attributes'] = attributeNames
+        return self.executeSQL(createTableCommand)    
+
+    def dropTable(self, tableName):
+        return self.executeSQL('drop table', tableName)
+
+    def insertValues(self, **values):
+        tableName = values['tableName']
+        del values['tableName']
+        insertSQLCommandParts = []
+        insertSQLCommandParts.append('insert into')
+        insertSQLCommandParts.append(tableName)
+        insertSQLCommandParts.append('(')
+        insertSQLCommandParts.append(','.join(values.keys()))
+        insertSQLCommandParts.append(')')
+        insertSQLCommandParts.append('values')
+        insertSQLCommandParts.append('(')
+        newValues = []
+        for value in values.values():
+            newValues.append('"' + str(value) + '"')
+        insertSQLCommandParts.append(','.join(newValues))
+        insertSQLCommandParts.append(')')
+        command = ' '.join(insertSQLCommandParts)
+        return self.executeSQL(command)        
+
+    def getTable(self, tableName):
+        return self.executeSQLAndReturn('select * from ' + tableName)
+
+    def executeSQL(self, *commandParts):
+        command = ' '.join(commandParts) + ';'
+        try:
+            self.__connection.query(command)
+            returnValue = True
+        except MySQLdb.Error:
+            returnValue = False
+        historyEntry = ' = '.join((str(command), str(returnValue)))
+        self.history.append(historyEntry)
+        self.__connection.commit()
+        return returnValue
+       
+    def executeSQLAndReturn(self, *commandParts):
+        command = ' '.join(commandParts) + ';'
+        cursor = self.__connection.cursor()
+        try:
+            cursor.execute(command)
+            returnList = []
+            for entry in cursor:
+                returnList.append(entry)
+            return returnList
+        except MySQLdb.Error:
+            return False	
+ 
+    def __str__(self):
+        return json.dumps(self.history, indent=4)
+
+		
+class NFO(object):
+	mid = ''
+	collection = ''
+	studio = ''
+	genre = ''
+	country = ''
+	thumb = ''
+	actor = ''
+	runtime = 0
+	def __init__(self, filePath):
+		self.nfoPath = filePath
+		self.studios = []
+		self.actors = {}
+		self.genres = []
+		self.countrys = []
+		self.thumbs = []
+
+		with open(filePath,'r') as nfo:
+			nfoContent = nfo.readlines()
+		for line in nfoContent:
+			if '<title>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<title>','')
+				line = line.replace('</title>','')
+				line = line.strip()
+				self.title = line
+			elif '<originaltitle>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<originaltitle>','')
+				line = line.replace('</originaltitle>','')
+				line = line.strip()
+				self.originaltitle = line
+			elif '<sorttitle>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<sorttitle>','')
+				line = line.replace('</sorttitle>','')
+				line = line.strip()
+				self.sorttitle = line
+			elif '<rating>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<rating>','')
+				line = line.replace('</rating>','')
+				line = line.strip()
+				self.rating = float(line)
+			elif '<year>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<year>','')
+				line = line.replace('</year>','')
+				line = line.strip()
+				self.year = int(line)				
+			elif '<plot>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<plot>','')
+				line = line.replace('</plot>','')
+				line = line.strip()
+				self.plot = line				
+			elif '<tagline>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<tagline>','')
+				line = line.replace('</tagline>','')
+				line = line.strip()
+				self.tagline = line
+			elif '<runtime>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<runtime>','')
+				line = line.replace('</runtime>','')
+				line = line.strip()
+				self.runtime = int(line)
+			elif '<mpaa>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<mpaa>','')
+				line = line.replace('</mpaa>','')
+				line = line.strip()
+				self.mpaa = line
+			elif '<credits>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<credits>','')
+				line = line.replace('</credits>','')
+				line = line.strip()
+				self.credits = line				
+			elif '<director>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<director>','')
+				line = line.replace('</director>','')
+				line = line.strip()
+				self.director = line				
+			elif '<playcount>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<playcount>','')
+				line = line.replace('</playcount>','')
+				line = line.strip()
+				self.playcount = int(line)
+			elif '<id>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<id>','')
+				line = line.replace('</id>','')
+				line = line.strip()
+				self.id = line
+			elif '<tmdbid>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<tmdbid>','')
+				line = line.replace('</tmdbid>','')
+				line = line.strip()
+				self.tmdbid = line
+			elif '<set>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<set>','')
+				line = line.replace('</set>','')
+				line = line.strip()
+				self.set = line
+			elif '<trailer>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<trailer>','')
+				line = line.replace('</trailer>','')
+				line = line.strip()
+				self.trailer = line
+			elif '<watched>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<watched>','')
+				line = line.replace('</watched>','')
+				line = line.strip()
+				self.watched = line
+			elif '<studio>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<studio>','')
+				line = line.replace('</studio>','')
+				line = line.strip()
+				if not line in self.studios:
+					self.studios.append(line)
+			elif '<genre>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<genre>','')
+				line = line.replace('</genre>','')
+				line = line.strip()
+				self.genres.append(line)
+			elif '<country>' in line:
+				line = line.replace(os.linesep,'')
+				line = line.replace('<country>','')
+				line = line.replace('</country>','')
+				line = line.strip()
+				self.countrys.append(line)
+		nfo = ''.join(nfoContent)
+		actorInfo = re.findall(r'<name>(.*)</name>\s+<role>(.*)</role>\s+<thumb>(.*)</thumb>', nfo) 
+		thumbs = re.findall(r'<thumb preview=".*">(.*)</thumb>', nfo)
+		self.thumbs = thumbs
+		for name, role, thumb in actorInfo:
+			self.actors[name] = ' | '.join((role, thumb))
+		self.studio = os.linesep.join(self.studios)
+		self.genre = os.linesep.join(self.genres)
+		self.country = os.linesep.join(self.countrys)
+		self.thumb = os.linesep.join(self.thumbs)
+		self.actor = os.linesep.join(self.actors.keys())
+	def __str__(self):
+		return json.dumps(self.__dict__,indent=4)
+
+class Movie(NFO):
+	def __init__(self, path):
+		nfoPath = os.path.splitext(path)[0] + '.nfo'
+		NFO.__init__(self, nfoPath) 
+		self.fileSize = os.path.getsize(path)
+		movie = self.parseMovie(path)
+		self.path = path
+		self.length = movie.length
+		self.width = movie.video[0].width
+		self.height = movie.video[0].height
+		self.quality = self.calculateQuality(movie)
+
+	def parseMovie(self, path):
+		return kaa.metadata.parse(path)
+
+	def calculateQuality(self, infoObject):
+		width = infoObject.video[0].width
+		if width >= 4096:
+			return '4K'
+		elif width >= 3840:
+			return '2160p'
+		elif width >= 1920:
+			return '1080p'
+		elif width >= 1280:
+			return '720p'
+		elif width >= 720:
+			return 'SD'
+		elif width < 720:
+			return 'LD' 
+		else:
+			return ''
+			
+	def getInfo(self):
+		return self.title, self.path, self.fileSize, self.quality, self.sorttitle, self.tagline, self.originaltitle, self.plot, self.rating, self.year, self.runtime, self.mpaa, self.credits, self.director, self.playcount, self.mid, self.tmdbid, self.collection, self.trailer, self.watched, self.studio, self.genre, self.country, self.actor, self.thumb
+		
+		
+
+
+def parseMovie(path):
+	return kaa.metadata.parse(path)
+
+
+
+
+def find(path, fileTypes=[]):
+	files = []
+	for entry in os.listdir(path):
+		fullPath = os.path.join(path, entry)
+		if os.path.isfile(fullPath):
+			name, ext = os.path.splitext(entry)
+			if ext in fileTypes:
+				files.append(fullPath)
+		elif os.path.isdir(fullPath):
+			files.extend(find(fullPath, fileTypes))
+	return sorted(files)
+		
+
+
+
+def resetDataBase(sqlConn):
+	sqlConn.dropDatabase('Media')
+	sqlConn.createDatabase('Media')
+	sqlConn.useDatabase('Media')
+	sqlConn.createTable(name='Filme', attributes=['ID int 11 primaryKey autoIncrement', 
+	'title varchar 255',
+	'path varchar 512', 
+	'fileSize bigint',
+	'quality varchar 10',
+	'sorttitle varchar 255',	
+	'tagline varchar 512',
+	'originaltitle varchar 255',	
+	'plot varchar 16384',
+	'rating FLOAT', 
+	'year int 11',
+	'runtime int 11',
+	'mpaa varchar 24',
+	'credits varchar 512',
+	'director varchar 128',
+	'playcount int 11',
+	'mid varchar 24',
+	'tmdbid varchar 24',
+	'collection varchar 255',
+	'trailer varchar 1024',
+	'watched varchar 5',
+	'studio varchar 1024',
+	'genres varchar 512',
+	'countrys varchar 1024',
+	'actors varchar 4096',
+	'thumbs varchar 32768'
+	])
+
+def openDataBase(sqlConn):
+	sqlConn.useDatabase('Media')
+	sqlConn.executeSQL("SET NAMES 'utf8'")
+
+
+def getMovieTitle(sqlConn):
+	mTitle = []
+	mT = sqlConn.executeSQLAndReturn('select title from Filme')
+	for m in mT:
+		mTitle.append(unicode(m[0],'utf-8'))
+	return mTitle
+
+
+def getNewMovies(sqlConn, currentMoviesFile):
+	currentMoviePaths = getMoviePathsDB(sqlConn)
+	currentMovies = currentMoviesDB
+	newMovies = currentMoviesFile
+	currentMovieNames = []
+	for title in getMovieTitle(sqlConn):
+		currentMovieNames.append(title)
+	newMovieFiles = []
+	for title, path, fileSize, quality, sorttitle, tagline, originaltitle, plot, rating, year, runtime, mpaa, credits, director, playcount, mid, tmdbid, collection, trailer, watched, studio, genre, country, actor, thumb in newMovies:
+		if not title in currentMovieNames:
+			movie = []
+			movie.append(title)
+			movie.append(path)
+			movie.append(fileSize)
+			movie.append(quality)
+			movie.append(sorttitle)
+			movie.append(tagline)
+			movie.append(originaltitle)
+			movie.append(plot)
+			movie.append(rating)
+			movie.append(year)
+			movie.append(runtime)
+			movie.append(mpaa)
+			movie.append(credits)
+			movie.append(director)
+			movie.append(playcount)
+			movie.append(mid)
+			movie.append(tmdbid)
+			movie.append(collection)
+			movie.append(trailer)
+			movie.append(watched)
+			movie.append(studio)
+			movie.append(genre)
+			movie.append(country)
+			movie.append(actor)
+			movie.append(thumb)
+			newMovieFiles.append(movie)
+	return newMovieFiles
+
+def getCurrentMoviesDB():
+	currMovies = sqlConn.getTable('Filme')
+	currentMovies = []
+	#t = time.time()
+	for m in getMovieTitle(sqlConn):
+		currentMovies.append(m)
+	
+	#~ for ID, title, path, fileSize, quality, sorttitle, tagline, originaltitle, plot, rating, year, runtime, mpaa, credits, director, playcount, mid, tmdbid, collection, trailer, watched, studio, genre, country, actor, thumb in currMovies:
+		#~ movie = []
+		#~ #mov.append(int(ID))
+		#~ movie.append(title)
+		#~ movie.append(path)
+		#~ movie.append(fileSize)
+		#~ movie.append(quality)
+		#~ movie.append(sorttitle)
+		#~ movie.append(tagline)
+		#~ movie.append(originaltitle)
+		#~ movie.append(plot)
+		#~ movie.append(rating)
+		#~ movie.append(year)
+		#~ movie.append(runtime)
+		#~ movie.append(mpaa)
+		#~ movie.append(credits)
+		#~ movie.append(director)
+		#~ movie.append(playcount)
+		#~ movie.append(mid)
+		#~ movie.append(tmdbid)
+		#~ movie.append(collection)
+		#~ movie.append(trailer)
+		#~ movie.append(watched)
+		#~ movie.append(studio)
+		#~ movie.append(genre)
+		#~ movie.append(country)
+		#~ movie.append(actor)
+		#~ movie.append(thumb)		
+		#~ currentMovies.append(movie)
+		
+	#print time.time() - t
+	return sorted(currentMovies)
+
+def getCurrentMoviesFile(moviePaths):
+	newMovies = []
+	for path in moviePaths:
+		path = os.path.abspath(path)
+		moviesPaths = find(path, movieFormats)
+		for ID, moviesPath in enumerate(moviesPaths):
+			movie = []
+			mPath = moviesPath
+			fileSize = os.path.getsize(moviesPath)
+			quality = calculateQuality(parseMovie(moviesPath))
+			name = os.path.splitext(os.path.split(moviesPath)[1])[0].replace(quality,'').replace('_',' ').replace('.',' ')		
+			nfoFilePath = os.path.splitext(moviesPath)[0]+'.nfo'
+			if os.path.isfile(nfoFilePath):
+				nfo = NFO(nfoFilePath)
+				movie.append(nfo.title)
+				movie.append(mPath)
+				movie.append(fileSize)
+				movie.append(quality)
+				movie.append(nfo.sorttitle)
+				movie.append(nfo.tagline)
+				movie.append(nfo.originaltitle)
+				movie.append(nfo.plot)
+				movie.append(nfo.rating)
+				movie.append(nfo.year)
+				movie.append(nfo.runtime)
+				movie.append(nfo.mpaa)
+				movie.append(nfo.credits)
+				movie.append(nfo.director)
+				movie.append(nfo.playcount)
+				movie.append(nfo.mid)
+				movie.append(nfo.tmdbid)
+				movie.append(nfo.collection)
+				movie.append(nfo.trailer)
+				movie.append(nfo.watched)
+				movie.append(nfo.studio)
+				movie.append(nfo.genre)
+				movie.append(nfo.country)
+				movie.append(nfo.actor)
+				movie.append(nfo.thumb)
+			else:
+				movie.append(name)
+				movie.append(mPath)
+				movie.append(fileSize)
+				movie.append(quality)
+				movie.append('')
+				movie.append('')
+				movie.append('')
+				movie.append('')
+				movie.append(0.0)
+				movie.append(0)
+				movie.append(0)
+				movie.append('')
+				movie.append('')
+				movie.append('')
+				movie.append(0)
+				movie.append('')
+				movie.append('')
+				movie.append('')
+				movie.append('')
+				movie.append('false')
+				movie.append('')
+				movie.append('')
+				movie.append('')
+				movie.append('')
+				movie.append('')
+			newMovies.append(movie)
+	return sorted(newMovies)
+			
+def getChangedMovies(currentMoviesDB, currentMoviesFile):
+	currentMovies = currentMoviesDB
+	newMovies = currentMoviesFile
+	changedMovies = []
+	for newMovie in newMovies:
+		if not newMovie in currentMovies:
+			changedMovies.append(newMovie)
+	return changedMovies
+
+
+	
+	
+	
+	
+	
+
+
+
+
+
+def updateMovieInfos(sqlConn, movieDirs):
+	filePaths = getMoviePathsFromFile(movieDirs)
+	sqlPaths = getMoviePathsFromDB(sqlConn)
+	for path in filePaths:
+		if path in sqlPaths:
+			title, path, fileSize, quality, sorttitle, tagline, originaltitle, plot, rating, year, runtime, mpaa, credits, director, playcount, mid, tmdbid, collection, trailer, watched, studio, genres, countrys, actors, thumbs = getMovieInfoFromFile(path)
+			fileInfo = (title, path, fileSize, quality, sorttitle, tagline, originaltitle, plot, rating, int(year), int(runtime), mpaa, credits, director, int(playcount), mid, tmdbid, collection, trailer, watched, studio, genres, countrys, actors, thumbs)
+			sqlInfo = getMovieInfoFromDB(sqlConn, path)
+			if not sqlInfo == fileInfo:
+				print 'info changed by', path
+				command = "UPDATE Filme SET title='"+title+"', fileSize='"+str(fileSize)+"', sorttitle='"+sorttitle+"', quality='"+quality+"', tagline='"+tagline+"', originaltitle='"+originaltitle+"', plot='"+plot+"', rating='"+str(rating)+"', year='"+str(year)+"', runtime='"+str(runtime)+"', mpaa='"+mpaa+"', credits='"+credits+"', director='"+director+"', playcount='"+str(playcount)+"', mid='"+mid+"', tmdbid='"+tmdbid+"', collection='"+collection+"', trailer='"+trailer+"', watched='"+watched+"', studio='"+studio+"', genres='"+genres+"', countrys='"+countrys+"', actors='"+actors+"', thumbs='"+thumbs+"' WHERE path = '"+path+"'"
+				sqlConn.executeSQL(command)
+			
+def getMovieInfoFromFile(path):
+	return Movie(path).getInfo()
+
+def getMovieInfoFromDB(sqlConn, path):
+	ID, title, path, fileSize, quality, sorttitle, tagline, originaltitle, plot, rating, year, runtime, mpaa, credits, director, playcount, mid, tmdbid, collection, trailer, watched, studio, genre, country, actor, thumb = sqlConn.executeSQLAndReturn('select * from Filme where path = "' + path + '"')[0]
+	return (title, path, fileSize, quality, sorttitle, tagline, originaltitle, plot, rating, int(year), int(runtime), mpaa, credits, director, int(playcount), mid, tmdbid, collection, trailer, watched, studio, genre, country, actor, thumb)
+
+
+def getMoviePathsFromDB(sqlConn):
+	moviePaths = []
+	mT = sqlConn.executeSQLAndReturn('select path from Filme')
+	for m in mT:
+		#moviePaths.append(unicode(m[0],'utf-8'))
+		moviePaths.append(m[0])
+	return sorted(moviePaths)
+
+def getMoviePathsFromFile(movieDirs):
+	moviePaths = []
+	for path in movieDirs:
+		path = os.path.abspath(path)
+		moviePaths.extend(find(path, movieFormats))
+	return sorted(moviePaths)
+
+def addMoviesToDB(sqlConn, newAddedMovies):
+	for newMovie in newAddedMovies:
+		addMovieToDB(sqlConn, newMovie)
+
+def addMovieToDB(sqlConn, path):
+	PathsFromDB = getMoviePathsFromDB(sqlConn)
+	if path in PathsFromDB:
+		return False
+	title, path, fileSize, quality, sorttitle, tagline, originaltitle, plot, rating, year, runtime, mpaa, credits, director, playcount, mid, tmdbid, collection, trailer, watched, studio, genre, country, actor, thumb = Movie(path).getInfo()
+	sqlConn.insertValues(tableName='Filme', title=title, path=path, fileSize=fileSize, quality=quality, sorttitle=sorttitle, tagline=tagline, originaltitle=originaltitle, plot=plot, rating=rating, year=year, runtime=runtime, mpaa=mpaa, credits=credits, director=director, playcount=playcount, mid=mid, tmdbid=tmdbid, collection=collection, trailer=trailer, watched=watched, studio=studio, genres=genre, countrys=country, actors=actor, thumbs=thumb)
+	return True
+
+
+
+def deleteDeletedMoviesAlsoFromDB(sqlConn, PathsFromDB, PathsFromFile):
+	deleted = getDeletedMovies(PathsFromDB, PathsFromFile)
+	deleteMoviesFromDB(sqlConn, deleted)
+
+def deleteMoviesFromDB(sqlConn, paths):
+	for path in paths:
+		deleteMovieFromDB(sqlConn, path)
+
+def deleteMovieFromDB(sqlConn, path):
+	print path
+	print sqlConn.executeSQL('delete from Filme where path = "' + path + '"')
+
+
+def getNewMovies(PathsFromDB, PathsFromFile):
+	return list(set(PathsFromFile)-set(PathsFromDB))
+
+def getDeletedMovies(PathsFromDB, PathsFromFile):
+	return list(set(PathsFromDB)-set(PathsFromFile))
+
+		
+	
+	
+
+	
+#"{0:.2f}".format(1.0*os.path.getsize(movie)/1024/1024/1024)+'GB'
+		
+sqlConn = MySQLConnection('localhost', 3306, 'root', 'bbbbbb')
+resetDataBase(sqlConn)
+openDataBase(sqlConn)
+
+#~ #a = getMovieInfoFromDB(sqlConn, '/mnt/2000GB/filme/MKV/Bulletproof.mkv')
+#~ #b = getMovieInfoFromFile('/mnt/2000GB/filme/MKV/Bulletproof.mkv')
+
+#~ updateMovieInfos(sqlConn, moviePaths)
+
+
+
+
+#~ 
+PathsFromDB = getMoviePathsFromDB(sqlConn)
+PathsFromFile = getMoviePathsFromFile(moviePaths)
+newAddedMovies = getNewMovies(PathsFromDB, PathsFromFile)
+addMoviesToDB(sqlConn, newAddedMovies)
+print 'New:', len(newAddedMovies)
+#~ 
+#~ #sys.exit()
+#~ 
+#~ print getNewMovies(PathsFromDB, PathsFromFile)
+#~ print getDeletedMovies(PathsFromDB, PathsFromFile)
+
+
+
+
