@@ -37,7 +37,7 @@ logging		= log.LogFile(PROCESSNAME, '/tmp/' + PROCESSNAME + '.log', config['logL
 logging.info(PROCESSNAME + ' start...')
 
 def email(subject, message):
-    mail.mailServer.addMail(mail.config['smtpConfig']['smtpUser'], mail.config['smtpConfig']['smtpUser'], subject, message)
+    mail.mailServer.addMail(mail.config['smtpConfig']['smtpUser'], mail.config['smtpConfig']['sendTo'], subject, message)
     logging.debug('send mail: '+ subject)
 
 
